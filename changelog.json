@@ -1,0 +1,501 @@
+[
+    {
+        "version": "1.7.2",
+        "title":  "💾 Internal Bug Fixes",
+        "features": [
+            "• **Fixed**: Bug where the bot wouldn't adjust vc cap due to role hierarchy",
+            "• **Updated**: Reminder to use `/setbotc` when adding capped voice channels to a session",
+            "• **Removed**: `/storytellerstats` replaced in favor of `/ststats` (same functionality)"
+        ]
+    },
+    {   "version": "1.7.1",
+        "title": "🐛 Bug squashing",
+        "features": [
+            "• **Fixed**: `/stprofile` pronoun saving issue (now persists correctly)",
+            "• **Fixed**: `/ststats` alias recognition (now works as expected)",
+            "• **Fixed**: Auto setup welcome message formatting issue (now displays properly)",
+            "• **Fixed**: `/forceendgame` missing from slash command list"
+        ]
+    },
+    {   "version": "1.7.0",
+        "title": "🎨 Storyteller Profile Cards Test",
+        "features": [
+            "• **New**: `/ststats @user` - Generates custom 800x600px image stat cards",
+            "• **New**: `/stprofile` - Customize your stat card (pronouns, favorite script, style)",
+            "• **Design**: BOTC-themed cards with red/black color scheme and purple accents",
+            "• **Profiles**: Bot-wide profiles (same across all servers)",
+            "• **Renamed**: `/storytellerstats` → `/ststats` (old name kept as alias)"
+        ]
+    },
+    {   "version": "1.6.3",
+        "title": "🔧 Major Bug Fixes & Quality of Life",
+        "features": [
+            "• **Fixed**: `*poll` now session-aware - pings players from correct category",
+            "• **Fixed**: `*poll` permission check (ST/Co-ST prefix OR admin)",
+            "• **Fixed**: `*timer` command intercepted by shorthand handler",
+            "• **Fixed**: `/startgame` and `/endgame` no longer send duplicate embeds",
+            "• **Improved**: Stats now fetch ALL games for accuracy (no 10-game limit)",
+            "• **Improved**: Welcome message clarifies category-based architecture"
+        ]
+    },
+    {   "version": "1.6.2",
+        "title": "⏱️ Timer & Spectator Bug Fixes",
+        "features": [
+            "• **Fixed**: Timer cancel command now works correctly",
+            "• **Fixed**: Spectator shadow followers now update properly when using prefix commands"
+        ]
+    },
+    {   "version": "1.6.1",
+        "title": "✨ Custom Emoji Integration & Bug Fixes",
+        "features": [
+            "• **Visual**: Replaced some unicode emojis with custom server emojis (star, scroll, gear, heart, pen, balance, question)",
+            "• **Fixed**: `/gamehistory` duration calculation (was showing 0m for all games)",
+            "• **Fixed**: `/deletegame` now properly updates storyteller stats (averages no longer include deleted games)",
+            "• **Security**: `/deletegame` now validates guild ownership (prevents cross-server deletions)",
+            "• **Improved**: `/gamehistory` embed formatting for better readability"
+        ]
+    },
+    {   "version": "1.6.0",
+        "title": "🎨 Visual Updates, Game Reminders & Permission Fixes",
+        "features": [
+            "• **Long-Running Games**: Interactive confirmation after 2 hours - \"Still Playing\"/\"Game Ended\" buttons",
+            "• **Fixed**: Reminder spam bug. Now tracks reminded games and sends confirmation once",
+            "• **Permissions**: `/endgame` allows any ST/Co-ST in session, warns if registered for different session",
+            "• **New**: `/forceendgame` admin command bypasses all checks",
+            "• **VC Caps**: Snapshot-based system eliminates race conditions",
+            "• **VC Caps**: Nickname changes automatically adjust caps when prefixes added/removed",
+            "• `/gamehistory` and `/deletegame` fixed"
+        ]
+    },
+    {   "version": "1.5.2",
+        "title": "🐛 Timer & Owner Permission Fixes",
+        "features": [
+            "• **Fixed**: Shorthand timer (`*5m`, `*4:30`) now accepts all duration formats (colon format, combined units)",
+            "• **Fixed**: Timer commands now show proper error messages when no game is active or no session found",
+            "• **Fixed**: Server owner nickname restriction now shows clear message about Discord platform limitation",
+            "• **Improved**: Owner gets special message explaining manual nickname change requirement for prefix commands",
+            "• **Improved**: Permission checks moved before announcements to prevent ST announcement before permission errors",
+            "• Timer error messages now use 5-second display delay for better visibility"
+        ]
+    },
+    {   "version": "1.5.1",
+        "title": "🔧 Session Architecture Cleanup",
+        "features": [
+            "• **BREAKING**: `/setbotc` now creates session entries (no more backward-compatibility auto-creation)",
+            "• **BREAKING**: Removed obsolete guild.botc_category_id auto-session creation logic",
+            "• **Improved**: All session-dependent commands now validate category setup and show clear error messages",
+            "• **Improved**: `/startgame`, `/endgame`, `*call`, `*timer`, `*night`, `*day`, `*consult` now require session",
+            "• **Philosophy**: One-session servers work perfectly - architecture supports both single and multi-session use cases",
+            "• `/setbotc <category>` is now the primary session setup command (explicit over implicit)"
+        ]
+    },
+    {   "version": "1.5.0",
+        "title": "🏗️ Pure Session-Scoped Architecture",
+        "features": [
+            "• **BREAKING**: Guild table no longer stores session config (grimoire, channels)",
+            "• **Multi-Session**: Sessions auto-create when config commands used in any category",
+            "• **Multi-Session**: Manual setup supported - create category, run *settown to start session",
+            "• **Multi-Session**: Startup announcements sent to each session independently",
+            "• All config commands (*g, *settown, *setannounce) auto-create sessions if needed",
+            "• Improved recovery: deleted sessions can be recreated by running config commands",
+            "• **New**: *game command - view current session's active game info",
+            "• **Improved**: *sessions now filters deleted categories, sorts by last active"
+        ]
+    },
+    {   "version": "1.4.1",
+        "title": "🐛 Bug Fixes & Multi-Session Support",
+        "features": [
+            "• **Fixed** `/startgame` duplicate messages, `/endgame` crashes, voice tracking TypeError",
+            "• **Fixed** Session manager parameter issues across multiple commands",
+            "• **Multi-Session**: All config now session-scoped (`*settown`, `*setexception`, `*g`)",
+            "• **Multi-Session**: Game commands detect category from command location",
+            "• Each category has independent Town Square, grimoire, exception channel",
+            "• Run commands from within a category to affect that session only"
+        ]
+    },
+    {   "version": "1.4.0",
+        "title": "📊 Storyteller Tools Improvements",
+        "features": [
+            "• Added *stguide command for quick access to storyteller resources",
+            "• Interactive /startgame confirmation with roster preview",
+            "• Added /addplayer and /removeplayer commands for manual player management",
+            "• Storyteller now tracks average game length & player count",
+            "• Session-scoped ST validation role checks for multi-session servers",
+            "• Defined ST vs Co-ST roles for clearer stat tracking"
+        ]
+    },
+    {   "version": "1.3.2",
+        "title": "🔧 Wiki Extraction UX & Timer logic",
+        "features": [
+            "• Added a shorthand timer format 'Xm' for minutes only (e.g., '5m' for 5 minutes)",
+            "• Improved wiki extraction logic",
+            "• Added /startgame requirement for timer commands to prevent misuse before game start",
+            "• **Bug Fix**: `/character` navigation buttons now work correctly for all users",
+            "• **Enhancement**: `/storytellerstats @user` now shows bot-wide achievements across all servers",
+            "• **Bug Fix**: Nickname change detection now properly distinguishes bot-initiated changes from manual edits",
+            "• **Bug Fix**: Server owners and high-role users no longer receive false warnings about manual nickname changes"
+        ]
+    },
+    {
+        "version": "1.3.1",
+        "title": "🔧 Character Command Polish",
+        "features": [
+            "• `/character` is now case-insensitive (e.g., 'imp', 'IMP', 'Imp' all work)",
+            "• Character icons now display larger (full-width image instead of thumbnail)",
+            "• Improved icon extraction with multiple fallback strategies",
+            "• Icons only appear on Summary page for cleaner navigation"
+        ]
+    },
+    {
+        "version": "1.3.0",
+        "title": "📖 Wiki Integration & Bug Fixes",
+        "features": [
+            "• `/character <name>` command with full wiki integration and button navigation",
+            "• Interactive sections: Summary, Tips & Tricks, Bluffing, How to Run, Fighting",
+            "• Character icons displayed as thumbnails, team-based color coding",
+            "• Custom scripts now normalized to 'Custom Script' in stats to prevent fragmentation",
+            "• Startup announcements prioritize BOTC channels over guild system channel",
+            "• Fixed embed character limit errors in startup announcements",
+            "• Fixed UnboundLocalError in `*sessions` command",
+            "• Fixed `update_session()` method signature mismatches"
+        ]
+    },
+    {
+        "version": "1.2.2",
+        "title": "✨ Enhanced Stats & Announcement System",
+        "features": [
+            "• Hybrid announcements: session-scoped for games, guild system channel for bot updates",
+            "• `/storytellerstats @user` now shows detailed individual stats with profile picture",
+            "• `/stats` enhanced with balance indicators, per-script win rates, and trend analysis",
+            "• `*setannounce` now session-scoped for multi-session servers",
+            "• Nickname change detection warns users to use bot commands instead of manual edits",
+            "• `*changelog` moved to admin-only to prevent spam",
+            "• Help text fixes: `*consult` and `*join` in correct categories",
+            "• Added 'Manage Messages' permission and updated invite link",
+            "• Consultation channel now appears before Town Square in `/autosetup`"
+        ]
+    },
+    {
+        "version": "1.2.1",
+        "title": "✨ Quality of Life & Polish",
+        "features": [
+            "• **New Commands**: `*join @user` (one-time voice channel join), `*consult` (request ST consultation via exception channel)",
+            "• **Improved Help System**: `*help` now shows quick reference, `*help st` for storyteller commands, `*help admin` for setup",
+            "• **Poll Embed Redesign**: Cleaner formatting, removed ASCII art, better readability",
+            "• **Bug Fix**: Prefix commands (`*st`, `*cost`, `*!`, `*brb`) now only show confirmation after successful nickname edit",
+            "• **Bug Fix**: Admin setup commands now properly check permissions before sending any messages",
+            "• Added feature where I talk to myself in the changelog to not go insane"
+        ]
+    },
+    {
+        "version": "1.2.0",
+        "title": "🎭 Multi-Session Support",
+        "features": [
+            "• **Multi-Session Architecture**: Run multiple concurrent games in different categories on the same server",
+            "• **Session-Scoped Commands**: All commands automatically scope to the category they're used in (grimoire, timers, calls, etc.)",
+            "• **Session-Scoped Game History**: `/gamehistory` auto-detects context - shows session history in BOTC categories, server-wide elsewhere",
+            "• **Enhanced Session Management**: `*sessions` lists all active sessions, `*sessions <id>` shows detailed info, `*sessions cleanup` removes old sessions",
+            "• **Automatic Session Cleanup**: Background task removes inactive sessions every 24 hours (30+ days old)",
+            "• **Backward Compatible**: Single-category servers work exactly as before with zero changes required",
+            "• Database migrations: Added category_id to timers and games tables for session isolation",
+            "• Does anybody read these?"
+        ]
+    },
+    {
+        "version": "1.1.0",
+        "title": "🏗️ Major Architecture Refactor & Critical Bug Fixes",
+        "features": [
+            "• **Architecture**: Moved all commands to dedicated Commands cog (reduced main.py by 655 lines / 25%)",
+            "• **Bug Fix**: *players now tracks by user ID instead of nicknames (fixes player tracking across nickname changes)",
+            "• **Bug Fix**: Voice channel capping now works correctly when using prefix commands (*st, *cost, *!) in capped channels",
+            "• Added recalculate_channel_cap() function to robustly handle VC limit adjustments after nickname changes",
+            "• Player tracking now immune to nickname changes - /startgame stores user IDs, *players compares by ID",
+            "• Delayed public release to ensure stability (sorry Tom </3)"
+        ]
+    },
+    {
+        "version": "1.0.1",
+        "title": "🐛 Bug Fixes & Visual Polish",
+        "features": [
+            "• Fixed /startgame showing wrong storyteller (variable collision bug)",
+            "• Fixed *spec not immediately moving spectators to target's voice channel",
+            "• All embeds now use custom server emojis (town square, script, players, good/evil, etc.)",
+            "• Enhanced /startgame and /endgame embeds with better layouts and timestamps",
+            "• Added official BOTC wiki thumbnails for Good/Evil team wins",
+            "• Improved embed visual hierarchy with bold headers and lighter values"
+        ]
+    },
+    {
+        "version": "1.0.0",
+        "title": "🎉 Public Release",
+        "features": [
+            "• First public release! Made by one person who plays too much BOTC.",
+            "• Fixed timer permissions bug that would crash when storytellers tried to set timers",
+            "• Cleaned up credential handling for self-hosting",
+            "• Added proper setup docs",
+            "• `/autosetup` command creates gothic-themed server structure",
+            "• Game tracking with stats and history",
+            "• Timers that persist through restarts",
+            "• Shadow follower system for spectators",
+            "• Voice channel management",
+            "• Script polling",
+            "• Gothic-themed embeds because why not"
+        ]
+    },
+    {
+        "version": "0.9.0",
+        "title": "🚀 Enhanced onboarding experience for new servers",
+        "features": [
+            "• `/autosetup` command for one-click server configuration with gothic-themed channels",
+            "• Welcome message sent to first accessible text channel upon joining a new server",
+            "• Detailed setup instructions and next steps included in welcome message",
+            "• Improved error handling and permission checks during autosetup",
+            "• Updated documentation to reflect new onboarding features"
+        ]
+    },
+    {
+        "version": "0.8.5",
+        "title": "🐛 Bug Fixes & Code Cleanup",
+        "features": [
+            "• Fixed missing /stats and /gamehistory handlers that caused commands to fail",
+            "• Removed duplicate import statements and dead code",
+            "• Fixed import order issues for better code organization",
+            "• Removed external debug code that referenced non-existent paths",
+            "• Improved code quality and maintainability"
+        ]
+    },
+    {
+        "version": "0.8.4",
+        "title": "🎲 Endgame Message Variety & Polish",
+        "features": [
+            "• Endgame messages for Good and Evil are now randomly selected from a set of flavorful, dramatic, and playful options!",
+            "• Improved formatting for all /endgame results.",
+            "• Minor bug fixes and code cleanup."
+        ]
+    },
+    {
+        "version": "0.8.3",
+        "title": "🐞 Minor Bug Fixes and Improvements",
+        "features": [
+            "• Fixed an issue where the bot could crash when moving members under certain conditions.",
+            "• I did something else but honestly I forgot what it was."
+        ]
+    },
+    {
+        "version": "0.8.2",
+        "title": "⚙️ Call & Timer improvements",
+        "features": [
+            "Timers now cancel any previous timer for the same server",
+            "Call only moves members not already in Town Square (avoids redundant moves)",
+            "Fixed command message deletion helper to avoid duplicate nested defs",
+            "Changed version formatting for private releases",
+            "Added exception voice channel feature for call operations"
+        ]
+    },
+    {
+        "version": "0.8.1",
+        "title": "🗑️ Game History Management",
+        "features": [
+            "`/deletegame <number>` - Delete a specific game from history (Admin)",
+            "`/clearhistory` - Clear all game history with confirmation (Admin)",
+            "Updated help command with new admin commands"
+        ]
+    },
+    {
+        "version": "0.8.0",
+        "title": "📊 Game Statistics Tracking",
+        "features": [
+            "`/startgame` - Start tracking a new game session",
+            "`/endgame` - Record game winner (Good/Evil)",
+            "`/stats` - View server-wide win rates and statistics",
+            "`/gamehistory` - View recent games played",
+            "Server-level stats only (no individual player tracking)"
+        ]
+    },
+    {
+        "version": "0.7.5",
+        "title": "🐛 Some bug squashing",
+        "features": [
+            "Fixed prefix matching bugs that could match unintended nicknames",
+            "Fixed voice channel cap state not saving after decrements",
+            "Fixed race condition in voice channel cap management",
+            "Added rollback on failed channel edits"
+        ]
+    },
+    {
+        "version": "0.7.4",
+        "title": "🐛 Bug Fixes & Performance Improvements",
+        "features": [
+            "Fixed voice channel caps drifting when privileged users switch channels",
+            "Fixed voice channel caps not persisting across bot restarts",
+            "Parallel player moves - timer calls now ~10x faster",
+            "Improved prefix matching for storyteller roles"
+        ]
+    },
+    {
+        "version": "0.7.3",
+        "title": "📊 Slash Command & Poll Improvements",
+        "features": [
+            "`/poll` slash command added (same as `*poll`)",
+            "Poll creation now pings all active players",
+            "Poll results only ping the poll creator",
+            "Active Developer Badge support"
+        ]
+    },
+    {
+        "version": "0.7.2",
+        "title": "⏰ Timed Polls",
+        "features": [
+            "Polls auto-end after 5 minutes and announce winner",
+            "Set custom timer with `*poll [123ch] <time>`",
+            "Results mention all active players",
+            "Better poll formatting"
+        ]
+    },
+    {
+        "version": "0.7.1",
+        "title": "🎨 Poll Formatting",
+        "features": [
+            "Better poll header formatting",
+            "Shows poll creator name and avatar"
+        ]
+    },
+    {
+        "version": "0.7.0",
+        "title": "📜 Script Polling",
+        "features": [
+            "`*poll [123ch]` command for script voting",
+            "Supports all base scripts plus Custom and Homebrew",
+            "Auto-adds emoji reactions"
+        ]
+    },
+    {
+        "version": "0.6.0",
+        "title": "🚀 Public Release",
+        "features": [
+            "Rebranded as Grimkeeper",
+            "`*night` and `*day` announcement commands",
+            "Documentation and GitHub setup",
+            "MIT license"
+        ]
+    },
+    {
+        "version": "0.5.9",
+        "title": "🔒 Production Readiness",
+        "features": [
+            "Timer persistence across restarts",
+            "Rate limiting (2s cooldown)",
+            "Admin-only `*config` command",
+            "Better error handling and logging"
+        ]
+    },
+    {
+        "version": "0.5.8",
+        "title": "🐛 Bug Fixes",
+        "features": [
+            "Fixed duplicate imports",
+            "Fixed requirements.txt package name",
+            "Added voice state check for shadow followers"
+        ]
+    },
+    {
+        "version": "0.5.7",
+        "title": "🧹 Code Quality",
+        "features": [
+            "Extracted prefix strings to constants",
+            "Added permission checks",
+            "Handle large player lists"
+        ]
+    },
+    {
+        "version": "0.5.6",
+        "title": "👥 Player Tracking",
+        "features": [
+            "`*players` shows who joined/left since last check"
+        ]
+    },
+    {
+        "version": "0.5.5",
+        "title": "🔧 Bug Fix",
+        "features": [
+            "Fixed voice channel caps to increase immediately when privileged users join (not just when full)",
+            "Improved cap tracking to stack properly when multiple privileged users join/leave the same channel"
+        ]
+    },
+    {
+        "version": "0.5.4",
+        "title": "📢 Startup Announcements",
+        "features": [
+            "`*setannounce #channel` command",
+            "Bot posts changelog on startup"
+        ]
+    },
+    {
+        "version": "0.5.3",
+        "title": "✨ UI Improvements",
+        "features": [
+            "Reorganized `*help` command with clearer role-based sections",
+            "Separated admin commands into dedicated 'Admin Setup' section",
+            "Moved commonly-used commands to 'Everyone' section at the top",
+            "Improved help descriptions and formatting for better readability"
+        ]
+    },
+    {
+        "version": "0.5.2",
+        "title": "🔧 Terminology Fix",
+        "features": [
+            "Renamed `*town` to `*players` for accurate terminology (shows all players, not just Townsfolk alignment)",
+            "Updated embed title and descriptions to reflect 'Active Players' instead of 'Townsfolk'"
+        ]
+    },
+    {
+        "version": "0.5.1",
+        "title": "🐛 Bug Fixes & Improvements",
+        "features": [
+            "Fixed voice channel caps to increase immediately when privileged users join (not just when full)",
+            "Improved cap tracking to stack properly when multiple privileged users join/leave the same channel"
+        ]
+    },
+    {
+        "version": "0.5.0",
+        "title": "✨ Timer & Voice Channel Management",
+        "features": [
+            "Timer System: Schedule townspeople calls with `*timer <duration>` (supports flexible formats: `5m`, `1h30m`, `1:30`, etc.)",
+            "Timer Status: Check remaining time with bare `*timer` command (public visibility)",
+            "Timer Cancellation: Cancel timers with `*timer cancel` (ST/Co-ST only)",
+            "Discord Timestamps: Timer end times now display in each user's local timezone using Discord markup",
+            "Channel Cap Management: Auto-increase voice channel limit when Storytellers/Co-Storytellers/Spectators join capped channels",
+            "Cap Reset: Automatically reset channel cap to original limit when privileged user leaves",
+            "Persistent Timer Messages: Timer announcement stays visible until completion or cancellation",
+            "Call Timer Integration: `*call` command now cancels any active timer before executing"
+        ]
+    },
+    {
+        "version": "0.4.0",
+        "title": "🏛️ Townspeople Management",
+        "features": [
+            "Town Square System: Admins set a destination channel with `*settown #channel`",
+            "BOTC Category Config: Admins configure BOTC category with `*setbotc <name|id>`",
+            "Call Command: Storytellers call all townspeople to Town Square with `*call`",
+            "Player List: View active player count and names with `*players` command"
+        ]
+    },
+    {
+        "version": "0.3.0",
+        "title": "🌘 Shadow System & DND",
+        "features": [
+            "Shadow Follow: Spectators follow others with `*spec @user`",
+            "Unfollow: Stop following with `*unspec`",
+            "Shadow View: See all followers with `*shadows`",
+            "DND Mode: Toggle Do-Not-Disturb with `*dnd` to prevent being followed"
+        ]
+    },
+    {
+        "version": "0.2.0",
+        "title": "📜 Grimoire & Prefixes",
+        "features": [
+            "Grimoire Links: Storytellers set/view grimoire with `*g <link>`",
+            "Role Prefixes: Toggle roles with `*!` (spectator), `*st` (storyteller), `*cost` (co-storyteller), `*brb` (away)"
+        ]
+    }
+]

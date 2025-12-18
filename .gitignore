@@ -1,0 +1,80 @@
+# Only publish DOCUMENTATION.md from docs/
+docs/*
+!docs/DOCUMENTATION.md
+assets/wiki_images/
+
+# Discord tokens, API keys, and secrets
+.env
+.env.*
+*.env
+
+# Database credentials and dumps
+*.sql
+*.db
+*.sqlite
+*.dump
+
+# Sensitive JSON files (except changelog and safe web assets)
+*.json
+!changelog.json
+
+dnd_users.json
+shadow_followers.json
+grimoire_links.json
+
+# SSH keys and private keys
+*.pem
+*.key
+id_rsa
+id_rsa.pub
+
+# Log files
+*.log
+discord.log
+
+# Python cache and virtualenvs
+__pycache__/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# System files
+.DS_Store
+
+# Backups and temp files
+backups/
+*.bak
+*.bak[0-9]
+*~
+*.tmp
+
+# Test/coverage
+htmlcov/
+.coverage
+coverage.xml
+.coverage.*
+pytest.ini
+grimkeeper.service
+
+# Deployment scripts with secrets
+scripts/deploy.sh
+scripts/deploy_language_support.sh
+cleanup.sh
+
+# Remove any files with real user data
+github.txt
+scripts/
+.vscode/
+tests/
+
+# Locales: only allow en.json and README.md
+locales/*
+!locales/en.json
+!locales/README.md
+
+# Ignore extract_strings.py in locales
+locales/extract_strings.py
+migrations/
+setup_db.sql.example
+

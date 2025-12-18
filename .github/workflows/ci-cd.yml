@@ -1,0 +1,138 @@
+name: Grimkeeper CI/CD
+
+# Note: where deploy uses secrets, they're mapped to step-level env variables
+# (e.g. EC2_SSH_KEY -> $EC2_SSH_KEY) to avoid interpolating `${{ secrets.* }}`
+# inside run blocks. This is a non-behavioral change that reduces editor
+# validator false positives.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Test Python Code
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Lint with flake8 (basic checks)
+      run: |
+        pip install flake8
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Exit-zero treats all errors as warnings
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      continue-on-error: true
+    
+    - name: Check for syntax errors
+      run: |
+        python -m py_compile main.py
+    
+    - name: Verify version consistency
+      run: |
+        VERSION=$(grep 'VERSION = ' botc/constants.py | cut -d'"' -f2)
+        README_VERSION=$(grep 'version-.*-blue' README.md | sed 's/.*version-\(.*\)-blue.*/\1/')
+        echo "Code version: $VERSION"
+        echo "README version: $README_VERSION"
+        if [ "$VERSION" != "$README_VERSION" ]; then
+          echo "❌ Version mismatch!"
+          exit 1
+        fi
+        echo "✅ Versions match!"
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install safety
+      run: pip install safety
+    
+    - name: Check for vulnerabilities
+      run: |
+        pip install -r requirements.txt
+        safety check --json || true
+      continue-on-error: true
+
+  deploy:
+    name: Deploy to EC2
+    needs: [test]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to EC2
+      env:
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+        EC2_USER: ${{ secrets.EC2_USER }}
+        EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+      run: |
+        if [ -z "$EC2_HOST" ]; then
+          echo "⚠️  EC2_HOST not configured - skipping deployment"
+          echo "To enable auto-deployment, add these secrets to your repo:"
+          echo "  EC2_HOST - your EC2 instance hostname"
+          echo "  EC2_USER - SSH user (usually 'ubuntu')"
+          echo "  EC2_SSH_KEY - your private SSH key"
+          exit 0
+        fi
+        
+        # Set up SSH
+        mkdir -p ~/.ssh
+        echo "$EC2_SSH_KEY" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+        
+        # Deploy using rsync
+        rsync -avz --progress \
+          --exclude='.venv/' \
+          --exclude='__pycache__/' \
+          --exclude='discord.log' \
+          --exclude='.git/' \
+          --exclude='.env' \
+          --exclude='dnd_users.json' \
+          --exclude='shadow_followers.json' \
+          --exclude='grimoire_links.json' \
+          --exclude='github.txt' \
+          --exclude='botc-web/' \
+          ./ "$EC2_USER@$EC2_HOST:/home/$EC2_USER/grimkeeper/"
+        
+        # Update systemd service file and restart
+        ssh "$EC2_USER@$EC2_HOST" "cd /home/$EC2_USER/grimkeeper && \
+          python3 -m venv .venv && \
+          .venv/bin/pip install -r requirements.txt && \
+          sudo cp grimkeeper.service /etc/systemd/system/grimkeeper.service && \
+          sudo systemctl daemon-reload && \
+          sudo systemctl restart grimkeeper"
+        
+        echo "✅ Deployment successful!"

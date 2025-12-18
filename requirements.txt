@@ -1,0 +1,8 @@
+discord.py
+python-dotenv
+asyncpg
+aiohttp
+beautifulsoup4
+pydantic
+pydantic-settings
+Pillow
