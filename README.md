@@ -6,7 +6,7 @@
 
 [![Version](https://img.shields.io/badge/version-1.7.2-blue.svg)](https://github.com/gorewife/grimkeeper)
 [![Discord](https://img.shields.io/discord/1440582976995069984?logo=discord&logoColor=white&label=Discord&labelColor=5865F2&color=white)](https://discord.gg/9twkvnDP7K)
-[![Stars](https://img.shields.io/github/stars/gorewife/grimkeeper?style=flat&logo=github&labelColor=gray&color=gold)](https://github.com/gorewife/grimkeeper/stargazers)
+![GitHub Repo stars](https://img.shields.io/github/stars/gorewife/grimkeeper?style=social)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.8+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![Discord.py](https://img.shields.io/badge/discord.py-latest-blue.svg?logo=discord&logoColor=white)](https://github.com/Rapptz/discord.py)
