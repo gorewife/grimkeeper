@@ -53,7 +53,7 @@ jobs:
     - name: Verify version consistency
       run: |
         VERSION=$(grep 'VERSION = ' botc/constants.py | cut -d'"' -f2)
-        README_VERSION=$(grep 'version-.*-blue' README.md | sed 's/.*version-\(.*\)-blue.*/\1/')
+        README_VERSION=$(grep -o 'version-[0-9.]*-' README.md | head -1 | sed 's/version-\([0-9.]*\)-/\1/')
         echo "Code version: $VERSION"
         echo "README version: $README_VERSION"
         if [ "$VERSION" != "$README_VERSION" ]; then
