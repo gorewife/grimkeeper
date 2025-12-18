@@ -491,7 +491,6 @@ def check_rate_limit(user_id, command):
 - Timed: Auto-announces winner after duration (default: 5 minutes)
 - Mentions all active players when poll is created
 - Shows poll creator's avatar and name
-- Purple embed with gothic formatting
 - Discord timestamp shows end time in user's local timezone
 
 **Poll End Behavior:**
@@ -594,7 +593,7 @@ If you accidentally delete a session or need to reconfigure:
   - Links to documentation
 
 **Welcome Message Content:**
-- **Option 1:** Use `/autosetup` for instant gothic setup
+- **Option 1:** Use `/autosetup` for instan setup
 - **Option 2:** Manual setup with step-by-step commands
 - Lists all essential commands
 - Highlights permission requirements:
@@ -605,7 +604,7 @@ If you accidentally delete a session or need to reconfigure:
   - Send Messages & Embed Links
   - Add Reactions
 
-**Theme:** Dark red (#8B0000) for gothic atmosphere
+**Theme:** Dark red (#8B0000) for dark atmosphere
 
 ### 13. Exception Channel System
 
@@ -691,7 +690,7 @@ If you accidentally delete a session or need to reconfigure:
 | `*config` | View current server settings | No |
 | `/deletegame <index>` | Delete specific game (1-based) | Ephemeral |
 | `/clearhistory` | Delete all game history | Ephemeral |
-| `/autosetup` | Auto-create gothic BOTC structure | Public embed |
+| `/autosetup` | Auto-create BOTC session | Public embed |
 
 ---
 
@@ -1257,7 +1256,7 @@ A: All state persists to PostgreSQL. On restart: migrations run, timers are rest
 A: For prefix commands: Add to `on_message` in main.py or create new cog. For slash commands: Add to `botc/cogs/slash.py` cog_load() and create handler in main.py.
 
 **Q: Can I customize the channels?**
-A: Yes! Edit the channel names, emojis, and colors in the `autosetup_handler` function. Currently uses dark red (#8B0000) and gothic emojis (🩸⚰️🕯️🌙🗡️).
+A: Yes! Edit the channel names, emojis, and colors in the `autosetup_handler` function. Currently uses dark red (#8B0000) and (🩸⚰️🕯️🌙🗡️).
 
 **Q: What's the difference between Custom and Homebrew scripts?**
 A: In `/startgame`, both allow custom_name input. "Custom Script" requires it, "Homebrew Script" makes it optional. Just semantic distinction for user preference.

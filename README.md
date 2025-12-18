@@ -52,7 +52,9 @@ A Discord bot for Blood on the Clocktower games. Manages voice channels, tracks 
 
 ### 1. Add the bot
 
-Invite link available by request (Join the Discord server)
+<a href="https://discord.com/oauth2/authorize?client_id=1424573592557064292&permissions=151021648&integration_type=0&scope=bot+applications.commands" target="_blank">
+  <img src="https://img.shields.io/badge/Invite%20Grimkeeper%20Bot-5865F2?style=for-the-badge&logo=discord&logoColor=white&labelColor=222&color=5865F2" alt="Invite Grimkeeper Bot"/>
+</a>
 
 Permissions needed:
 - Manage Nicknames
