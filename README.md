@@ -4,12 +4,12 @@
 
 <div align="center">
 
-[![Version](https://img.shields.io/badge/version-1.7.2-blue.svg)](https://github.com/gorewife/grimkeeper)
-[![Discord](https://img.shields.io/discord/1440582976995069984?logo=discord&logoColor=white&label=Discord&labelColor=5865F2&color=white)](https://discord.gg/9twkvnDP7K)
-![GitHub Repo stars](https://img.shields.io/github/stars/gorewife/grimkeeper?style=social)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.8+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
-[![Discord.py](https://img.shields.io/badge/discord.py-latest-blue.svg?logo=discord&logoColor=white)](https://github.com/Rapptz/discord.py)
+![Version](https://img.shields.io/badge/version-1.7.2-222?style=flat-square&logo=github&logoColor=white)
+![Discord](https://img.shields.io/discord/1440582976995069984?style=flat-square&logo=discord&logoColor=white&color=222&label=&labelColor=222)
+![GitHub Repo stars](https://img.shields.io/github/stars/gorewife/grimkeeper?style=flat-square&label=&color=222&logo=github&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-222?style=flat-square&logoColor=white)
+![Python](https://img.shields.io/badge/python-3.8+-222?style=flat-square&logo=python&logoColor=white)
+![Discord.py](https://img.shields.io/badge/discord.py-latest-222?style=flat-square&logo=discord&logoColor=white)
 
 </div>
 
