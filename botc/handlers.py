@@ -39,31 +39,9 @@ from botc.exceptions import DatabaseError
 if TYPE_CHECKING:
     from botc.database import Database
 
+from botc.utils import strip_st_prefix, add_script_emoji
+
 logger = logging.getLogger('botc_bot')
-
-
-def strip_st_prefix(display_name: str) -> str:
-    """Remove storyteller prefix from display name if present."""
-    name = display_name
-    if name.startswith(PREFIX_ST):
-        name = name[len(PREFIX_ST):]
-    elif name.startswith(PREFIX_COST):
-        name = name[len(PREFIX_COST):]
-    return name
-
-
-def add_script_emoji(script_name: str) -> str:
-    """Add emoji to script name if it's a base script."""
-    from botc.constants import EMOJI_TROUBLE_BREWING, EMOJI_SECTS_AND_VIOLETS, EMOJI_BAD_MOON_RISING
-    
-    script_lower = script_name.lower()
-    if 'trouble' in script_lower and 'brewing' in script_lower:
-        return f"{EMOJI_TROUBLE_BREWING} {script_name}"
-    elif 'sects' in script_lower or 'violet' in script_lower:
-        return f"{EMOJI_SECTS_AND_VIOLETS} {script_name}"
-    elif 'bad' in script_lower and 'moon' in script_lower:
-        return f"{EMOJI_BAD_MOON_RISING} {script_name}"
-    return script_name
 
 
 async def start_game_handler(

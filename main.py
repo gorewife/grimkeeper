@@ -20,7 +20,6 @@ from botc.discord_utils import safe_send_interaction, safe_defer, safe_send_mess
 # Bot utilities
 from botc.utils import (
     get_botc_category,
-    get_session_from_channel,
     get_exception_channel_ids,
     is_storyteller,
     is_main_storyteller,
@@ -82,7 +81,7 @@ from botc.exceptions import (
     DatabaseError,
     ValidationError,
 )
-from botc.utils import write_json_atomic
+from botc.utils import write_json_atomic, add_script_emoji
 from botc.timers import TimerManager
 from botc.database import Database
 from botc.session import SessionManager
@@ -146,8 +145,8 @@ async def get_active_players(guild: discord.Guild, channel: discord.TextChannel 
     try:
         # Get session from channel context
         botc_category = None
-        if channel and bot.session_manager:
-            session = await get_session_from_channel(channel, bot.session_manager)
+        if channel and bot.session_manager and channel.category:
+            session = await bot.session_manager.get_session_from_channel(channel, channel.guild)
             if session and session.category_id:
                 botc_category = guild.get_channel(session.category_id)
         
@@ -293,8 +292,8 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
         
         # Try to get session from channel context
         session = None
-        if bot.session_manager and channel:
-            session = await get_session_from_channel(channel, bot.session_manager)
+        if bot.session_manager and channel and channel.category:
+            session = await bot.session_manager.get_session_from_channel(channel, channel.guild)
         
         # Get category for this session
         botc_category = None
@@ -350,7 +349,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
         else:
             # Removing ST - clear session ownership
             if session and bot.session_manager:
-                # TODO: Remove below line if any bugs in 1.7.2
                 session.storyteller_user_id = None
                 await bot.session_manager.update_session(session)
 
@@ -627,12 +625,18 @@ except (TypeError, ValueError) as e:
 # Poll ending logic moved to `botc.polls` to avoid duplication.
 # Use `from botc.polls import _end_poll` where needed (handlers already import it).
 
+async def get_session_from_channel_wrapper(channel, session_manager):
+    """Wrapper for session_manager.get_session_from_channel for backwards compatibility."""
+    if not session_manager or not channel or not hasattr(channel, 'category') or not channel.category:
+        return None
+    return await session_manager.get_session_from_channel(channel, channel.guild)
+
 # Expose helper callables, data structures, and manager to cogs
 bot.get_active_players = get_active_players
 bot.is_storyteller = is_storyteller
 bot.is_main_storyteller = is_main_storyteller
 bot.call_townspeople = call_townspeople
-bot.get_session_from_channel = get_session_from_channel
+bot.get_session_from_channel = get_session_from_channel_wrapper
 bot.timer_manager = timer_manager
 bot.session_manager = None  # Will be set in on_ready after DB initialization
 bot.db = db
@@ -641,7 +645,6 @@ bot.is_admin = is_admin
 bot.send_temporary = send_temporary
 bot.toggle_prefix = toggle_prefix
 bot.get_botc_category = get_botc_category
-bot.get_session_from_channel = get_session_from_channel
 bot.get_member_name = get_member_name
 bot.get_player_role = get_player_role
 bot.strip_brb_prefix = strip_brb_prefix
@@ -875,9 +878,10 @@ async def gamehistory_handler(interaction: discord.Interaction, limit: int = 50)
         
         # Auto-detect session context
         category_id = None
-        session = await get_session_from_channel(interaction.channel, bot.session_manager)
-        if session:
-            category_id = session.category_id
+        if bot.session_manager and interaction.channel and interaction.channel.category:
+            session = await bot.session_manager.get_session_from_channel(interaction.channel, guild)
+            if session:
+                category_id = session.category_id
         
         history = await db.get_game_history(guild_id, limit=limit, category_id=category_id)
         

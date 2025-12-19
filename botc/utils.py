@@ -161,24 +161,6 @@ async def get_botc_category(guild: discord.Guild, db) -> Optional[discord.Catego
     return botc_category
 
 
-async def get_session_from_channel(channel: discord.abc.GuildChannel, session_manager):
-    """
-    Get the session for a channel based on its category.
-    
-    Args:
-        channel: Discord channel to resolve session for
-        session_manager: Session manager instance
-        
-    Returns:
-        Session object if found, None otherwise
-    """
-    if not session_manager or not channel.category:
-        return None
-    
-    guild = channel.guild
-    return await session_manager.get_session_from_channel(channel, guild)
-
-
 async def get_exception_channel_ids(guild: discord.Guild, db) -> set[int]:
     """Get set of voice channel IDs that should be excluded from *call operations.
     
@@ -275,6 +257,27 @@ def strip_brb_prefix(nickname: str) -> str:
     if nickname.startswith(PREFIX_BRB):
         return nickname[len(PREFIX_BRB):]
     return nickname
+
+
+def add_script_emoji(script_name: str) -> str:
+    """Add emoji to script name if it's a base script.
+    
+    Args:
+        script_name: Name of the script
+        
+    Returns:
+        Script name with emoji prefix if applicable
+    """
+    from botc.constants import EMOJI_TROUBLE_BREWING, EMOJI_SECTS_AND_VIOLETS, EMOJI_BAD_MOON_RISING
+    
+    script_lower = script_name.lower()
+    if 'trouble' in script_lower and 'brewing' in script_lower:
+        return f"{EMOJI_TROUBLE_BREWING} {script_name}"
+    elif 'sects' in script_lower or 'violet' in script_lower:
+        return f"{EMOJI_SECTS_AND_VIOLETS} {script_name}"
+    elif 'bad' in script_lower and 'moon' in script_lower:
+        return f"{EMOJI_BAD_MOON_RISING} {script_name}"
+    return script_name
 
 
 def get_member_name(member: discord.Member) -> str:
