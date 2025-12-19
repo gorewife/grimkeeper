@@ -107,6 +107,8 @@ Type `*help` to see all commands.
 - `*cost` - Toggle Co-Storyteller role
 - `*g <link>` - Set grimoire link (session-scoped)
 - `*call` - Move everyone to town square (requires active game)
+- `*mute` - Server mute all players, excluding storytellers (requires active game)
+- `*unmute` - Unmute all players
 - `*timer <duration>` - Schedule a delayed call (requires active game)
 - `*<duration>` - Shorthand timer (e.g., `*5m`, `*1h30m`)
 - `*night` - Announce nighttime (requires active game)

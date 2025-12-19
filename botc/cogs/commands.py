@@ -199,6 +199,8 @@ class Commands(commands.Cog):
                     "`/startgame <script>` - start game tracking\n"
                     "`/endgame <winner>` - record game result\n"
                     "`*call` - call all townspeople to Town Square\n"
+                    "`*mute` - server mute all players (excludes STs)\n"
+                    "`*unmute` - unmute all players\n"
                     "`*timer <duration>` - schedule a delayed call (e.g., `5m`, `1h30m`)\n"
                     "`*timer cancel` - cancel active timer"
                 ),
@@ -370,6 +372,8 @@ class Commands(commands.Cog):
                 name="⏰ Managing Players",
                 value=(
                     "`*call` - Move everyone to Town Square\n"
+                    "`*mute` - Server mute all players (excludes STs)\n"
+                    "`*unmute` - Unmute all players\n"
                     "`*timer 5m` or `*5m` - Schedule a delayed call\n"
                     "`*night` / `*day` - Post phase announcements\n"
                     "`*players` - See who's in the game"

@@ -145,9 +145,145 @@ class Timers(commands.Cog):
                 await msg.delete(delay=DELETE_DELAY_NORMAL)
             return
 
+        # *mute handling - server mute everyone except storytellers
+        if content_lower.startswith("*mute"):
+            if not getattr(self.bot, "is_storyteller", lambda m: False)(author):
+                msg = await message.channel.send("Only storytellers can use mute.")
+                await msg.delete(delay=DELETE_DELAY_NORMAL)
+                return
+            
+            # Validate channel is in a BOTC category with a session
+            if not message.channel.category:
+                msg = await message.channel.send("⚠️ This command must be run in a channel within a session category.")
+                await msg.delete(delay=DELETE_DELAY_ERROR)
+                return
+            
+            session_manager = getattr(self.bot, "session_manager", None)
+            if session_manager:
+                session = await session_manager.get_session(message.guild.id, message.channel.category.id)
+                if not session:
+                    msg = await message.channel.send("⚠️ This category isn't linked to a session yet. Run `/setbotc` to set it up.")
+                    await msg.delete(delay=DELETE_DELAY_ERROR)
+                    return
+            
+            # Require active game
+            if not await self._require_active_game(message):
+                return
+
+            try:
+                # Check bot permissions
+                guild = message.guild
+                bot_member = guild.get_member(self.bot.user.id)
+                if not bot_member.guild_permissions.mute_members:
+                    msg = await message.channel.send("❌ Bot lacks 'Mute Members' permission.")
+                    await msg.delete(delay=DELETE_DELAY_ERROR)
+                    return
+                
+                # Get all voice channels in the category
+                category = message.channel.category
+                muted_count = 0
+                failed_count = 0
+                is_storyteller = getattr(self.bot, "is_storyteller", lambda m: False)
+                
+                # Collect all members in voice channels in this category
+                for voice_channel in category.voice_channels:
+                    for member in voice_channel.members:
+                        # Skip bots
+                        if member.bot:
+                            continue
+                        # Skip storytellers and co-storytellers
+                        if is_storyteller(member):
+                            continue
+                        # Skip if already muted
+                        if member.voice and member.voice.mute:
+                            continue
+                        
+                        # Server mute the member
+                        try:
+                            await member.edit(mute=True)
+                            muted_count += 1
+                        except discord.HTTPException as e:
+                            logger.warning(f"Failed to mute {member.display_name}: {e}")
+                            failed_count += 1
+                        except Exception as e:
+                            logger.error(f"Unexpected error muting {member.display_name}: {e}")
+                            failed_count += 1
+                
+                if muted_count > 0:
+                    msg = await message.channel.send(f"🔇 Muted {muted_count} player{'s' if muted_count != 1 else ''} (storytellers excluded)")
+                else:
+                    msg = await message.channel.send("🔇 No players to mute (all either storytellers or already muted)")
+                await msg.delete(delay=DELETE_DELAY_NORMAL)
+                
+            except Exception as e:
+                logger.exception(f"Error in *mute command: {e}")
+                msg = await message.channel.send("❌ Failed to mute players.")
+                await msg.delete(delay=DELETE_DELAY_ERROR)
+            return
+
+        # *unmute handling - unmute everyone in the category
+        if content_lower.startswith("*unmute"):
+            if not getattr(self.bot, "is_storyteller", lambda m: False)(author):
+                msg = await message.channel.send("Only storytellers can use unmute.")
+                await msg.delete(delay=DELETE_DELAY_NORMAL)
+                return
+            
+            # Validate channel is in a BOTC category
+            if not message.channel.category:
+                msg = await message.channel.send("⚠️ This command must be run in a channel within a category.")
+                await msg.delete(delay=DELETE_DELAY_ERROR)
+                return
+            
+            try:
+                # Check bot permissions
+                guild = message.guild
+                bot_member = guild.get_member(self.bot.user.id)
+                if not bot_member.guild_permissions.mute_members:
+                    msg = await message.channel.send("❌ Bot lacks 'Mute Members' permission.")
+                    await msg.delete(delay=DELETE_DELAY_ERROR)
+                    return
+                
+                # Get all voice channels in the category
+                category = message.channel.category
+                unmuted_count = 0
+                failed_count = 0
+                
+                # Collect all muted members in voice channels in this category
+                for voice_channel in category.voice_channels:
+                    for member in voice_channel.members:
+                        # Skip bots
+                        if member.bot:
+                            continue
+                        # Skip if not muted
+                        if member.voice and not member.voice.mute:
+                            continue
+                        
+                        # Server unmute the member
+                        try:
+                            await member.edit(mute=False)
+                            unmuted_count += 1
+                        except discord.HTTPException as e:
+                            logger.warning(f"Failed to unmute {member.display_name}: {e}")
+                            failed_count += 1
+                        except Exception as e:
+                            logger.error(f"Unexpected error unmuting {member.display_name}: {e}")
+                            failed_count += 1
+                
+                if unmuted_count > 0:
+                    msg = await message.channel.send(f"🔊 Unmuted {unmuted_count} player{'s' if unmuted_count != 1 else ''}")
+                else:
+                    msg = await message.channel.send("🔊 No players to unmute (all already unmuted)")
+                await msg.delete(delay=DELETE_DELAY_NORMAL)
+                
+            except Exception as e:
+                logger.exception(f"Error in *unmute command: {e}")
+                msg = await message.channel.send("❌ Failed to unmute players.")
+                await msg.delete(delay=DELETE_DELAY_ERROR)
+            return
+
         # Shorthand timer: *3m, *5m, *1h, *4:30, *5m30s, etc. (must be ST and have active game)
         # Exclude known commands from shorthand parsing
-        if content_lower.startswith("*") and len(content) > 1 and not content_lower.startswith(("*timer", "*call", "*poll")):
+        if content_lower.startswith("*") and len(content) > 1 and not content_lower.startswith(("*timer", "*call", "*mute", "*unmute", "*poll")):
             # Check if it's a duration shorthand (e.g., *3m, *5m, *1h30m, *4:30)
             potential_duration = content[1:].strip()
             # Try to parse as a duration - let parse_duration handle validation

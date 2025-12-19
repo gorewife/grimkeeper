@@ -69,7 +69,8 @@ MAX_NICK_LENGTH = 32  # Maximum length for Discord nicknames
 DELETABLE_COMMANDS = [
     "*!", "*st", "*cost", "*brb", "*help", "*g", "*spec", "*unspec",
     "*shadows", "*dnd", "*settown", "*setbotc", "*setannounce", "*call",
-    "*players", "*timer", "*changelog", "*config", "*night", "*day", "*poll"
+    "*players", "*timer", "*changelog", "*config", "*night", "*day", "*poll",
+    "*mute", "*unmute"
 ]
 
 # Script emojis
