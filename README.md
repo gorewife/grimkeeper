@@ -73,7 +73,6 @@ Run these (admin only):
 ```
 /setbotc Blood on the Clocktower
 /settown #town-square
-/setannounce #announcements
 ```
 
 **What `/setbotc` does:** Creates a session for that category - this is how the bot knows which categories are used for BOTC games.
@@ -130,7 +129,6 @@ Type `*help` to see all commands.
 ### ⚙️ Admin Only
 - `/setbotc <category>` - Configure BOTC category
 - `/settown #channel` - Set town square channel
-- `/setannounce #channel` - Set announcement channel (session-scoped)
 - `/setexception #channel` - Set private ST channel
 - `*changelog` - View version history
 - `/sessions` - List all active sessions

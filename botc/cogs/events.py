@@ -166,20 +166,12 @@ class EventHandlers(commands.Cog):
                         hours = int(duration / 3600)
                         minutes = int((duration % 3600) / 60)
                         
-                        if session and session.announce_channel_id:
-                            announce_channel = guild.get_channel(session.announce_channel_id)
-                            if announce_channel and isinstance(announce_channel, discord.TextChannel):
-                                await self._send_game_confirmation(
-                                    announce_channel, 
-                                    row, 
-                                    guild, 
-                                    hours, 
-                                    minutes
-                                )
-                                self.reminded_games.add(game_key)
-                                logger.info(f"Sent game confirmation check to {guild.name} for {hours}h {minutes}m game")
-                                continue
+                        # Long game reminder removed - announce_channel deprecated
+                        self.reminded_games.add(game_key)
+                        logger.info(f"Long game detected in {guild.name}: {hours}h {minutes}m (reminders disabled)")
+                        continue
                         
+                        # Code below is unreachable and should be removed in future cleanup
                         storyteller = await self.bot.fetch_user(row['storyteller_id'])
                         if storyteller:
                             embed = discord.Embed(
@@ -552,7 +544,6 @@ class EventHandlers(commands.Cog):
                     "2. Create text and voice channels inside that category\n"
                     "3. Run these commands from within a channel in that category:\n"
                     "   - `/settown #voice-channel` - Set Town Square\n"
-                    "   - `/setannounce #text-channel` - Set announcements\n"
                     "   - `/setexception #voice-channel` (optional) - Set private ST channel\n\n"
                     "**Multi-Session Support:**\n"
                     "Create multiple categories and configure each one independently. "
@@ -612,21 +603,10 @@ class EventHandlers(commands.Cog):
         if not session or not session.vc_caps:
             return
         if channel.user_limit > 0 and channel.id not in session.vc_caps:
-            now = time.time()
-            last = self._last_vc_cap_reminder.get(channel.guild.id, 0)
-            if now - last < 3600:
-                return  # Cooldown: 1 hour per guild
-            self._last_vc_cap_reminder[channel.guild.id] = now
-            notify_channel = None
-            if session.announce_channel_id:
-                notify_channel = channel.guild.get_channel(session.announce_channel_id)
-            if not notify_channel:
-                for ch in channel.guild.text_channels:
-                    if ch.permissions_for(channel.guild.me).send_messages:
-                        notify_channel = ch
-                        break
-            if notify_channel:
-                await notify_channel.send(
+            # Voice cap warning removed - announce_channel deprecated
+            logger.info(f"Capped voice channel created in BOTC category: {channel.name} (notifications disabled)")
+            if False:  # Disabled
+                await channel.guild.text_channels[0].send(
                     f"⚠️ A new capped voice channel `{channel.name}` was created in a BOTC category.\n"
                     f"Please run `/setbotc` in this category after you're done adding channels to update the cap snapshot.\n"
                     f"(This reminder will not repeat for 1 hour.)"

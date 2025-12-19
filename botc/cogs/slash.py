@@ -1019,11 +1019,11 @@ class SlashCog(commands.Cog):
                 await interaction.response.send_message("❌ Session manager not available.", ephemeral=True)
                 return
             
-            # Use the interaction's channel to determine session context
-            session = await session_manager.get_or_create_session_from_channel(interaction.channel, interaction.guild)
+            # Get existing session from channel context - do not auto-create
+            session = await session_manager.get_session_from_channel(interaction.channel, interaction.guild)
             if not session:
                 await interaction.response.send_message(
-                    "⚠️ This command must be used within a category. Move this channel into a category first.",
+                    "⚠️ No session found in this category. Run `/setbotc` first to create a session.",
                     ephemeral=True
                 )
                 return
@@ -1094,32 +1094,7 @@ class SlashCog(commands.Cog):
                 ephemeral=True
             )
 
-        @app_commands.command(name="setannounce", description="[Admin] Set the announcement channel for this session")
-        @app_commands.describe(channel="The text channel for announcements")
-        async def setannounce_slash(interaction: discord.Interaction, channel: discord.TextChannel):
-            """Set the announcement channel for this session."""
-            if not self.bot.is_admin(interaction.user):
-                await interaction.response.send_message("❌ Only administrators can set the announcement channel.", ephemeral=True)
-                return
-            
-            session_manager = getattr(self.bot, "session_manager", None)
-            if not session_manager:
-                await interaction.response.send_message("❌ Session manager not available.", ephemeral=True)
-                return
-            
-            session = await session_manager.get_or_create_session_from_channel(interaction.channel, interaction.guild)
-            if not session:
-                await interaction.response.send_message(
-                    "⚠️ This command must be used within a category. Move this channel into a category first.",
-                    ephemeral=True
-                )
-                return
-            
-            # Update session's announce channel
-            session.announce_channel_id = channel.id
-            await session_manager.update_session(session)
-            
-            await interaction.response.send_message(f"✅ Announcement channel for this session set to {channel.mention}", ephemeral=True)
+        # /setannounce - REMOVED (deprecated feature)
 
         @app_commands.command(name="setexception", description="[Admin] Set the exception/private ST channel for this session")
         @app_commands.describe(channel="The voice channel for private ST discussions (optional)")
@@ -1134,10 +1109,11 @@ class SlashCog(commands.Cog):
                 await interaction.response.send_message("❌ Session manager not available.", ephemeral=True)
                 return
             
-            session = await session_manager.get_or_create_session_from_channel(interaction.channel, interaction.guild)
+            # Get existing session from channel context - do not auto-create
+            session = await session_manager.get_session_from_channel(interaction.channel, interaction.guild)
             if not session:
                 await interaction.response.send_message(
-                    "⚠️ This command must be used within a category. Move this channel into a category first.",
+                    "⚠️ No session found in this category. Run `/setbotc` first to create a session.",
                     ephemeral=True
                 )
                 return
@@ -1237,24 +1213,15 @@ class SlashCog(commands.Cog):
 
         # /deletesession
         @app_commands.command(name="deletesession", description="Delete a BOTC session (Admins only)")
-        @app_commands.describe(category_id="The category ID of the session to delete (copy-paste from /sessions, numbers only)")
-        async def deletesession_slash(interaction: discord.Interaction, category_id: str):
-            """Delete a BOTC session configuration. Accepts category ID as a string and parses it."""
+        @app_commands.describe(category_id="The category ID of the session to delete (from /sessions)")
+        async def deletesession_slash(interaction: discord.Interaction, category_id: int):
+            """Delete a BOTC session configuration."""
             # Admin check
             if not interaction.user.guild_permissions.administrator:
                 await interaction.response.send_message("Only administrators can delete sessions.", ephemeral=True)
                 return
 
-            # Try to parse the string as an integer
-            try:
-                cat_id = int(category_id.strip())
-            except Exception:
-                await interaction.response.send_message(
-                    "❌ Invalid category ID. Please copy and paste only the numeric ID (no spaces or extra characters).",
-                    ephemeral=True
-                )
-                return
-
+            cat_id = category_id
             guild_id = interaction.guild.id
             session_manager = getattr(self.bot, "session_manager", None)
             if not session_manager:
@@ -1344,7 +1311,6 @@ class SlashCog(commands.Cog):
             removeplayer_slash,
             settown_slash,
             setbotc_slash,
-            setannounce_slash,
             setexception_slash,
             sessions_slash,
             deletesession_slash,

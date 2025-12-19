@@ -206,15 +206,9 @@ async def start_game_handler(
                     existing_session.last_active = time.time()
                     existing_session.storyteller_user_id = storyteller_id
                     await session_manager.update_session(existing_session)
+                    logger.info(f"Session updated for guild {guild_id}, category {botc_category.id}")
                 else:
-                    # Create new session with minimal config - admin will set town square, grimoire, etc.
-                    await session_manager.create_session(
-                        guild_id=guild_id,
-                        category_id=botc_category.id,
-                        active_game_id=game_id,
-                        storyteller_user_id=storyteller_id
-                    )
-                logger.info(f"Session created/updated for guild {guild_id}, category {botc_category.id}")
+                    logger.warning(f"No session found for guild {guild_id}, category {botc_category.id}. Game started but session not linked.")
             except Exception as e:
                 logger.error(f"Failed to create/update session: {e}")
         

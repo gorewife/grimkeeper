@@ -203,7 +203,7 @@ async def send_temporary(channel, content: str = None, embed: discord.Embed = No
     return msg
 
 
-async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, prefix_key: str, announce_channel: discord.TextChannel = None):
+async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, prefix_key: str):
     """
     Toggle a nickname prefix for a member.
     
@@ -211,7 +211,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
         member: Discord member to modify
         channel: Channel where the command was sent (for responses)
         prefix_key: Which prefix to toggle ("brb", "st", "cost", or "spe")
-        announce_channel: Optional channel to announce storyteller changes
     """
     prefixes = {"brb": PREFIX_BRB, "st": PREFIX_ST, "cost": PREFIX_COST, "spe": PREFIX_SPEC}
     exclusive = ["st", "cost", "spe"]
@@ -295,12 +294,13 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
         if bot.session_manager and channel and channel.category:
             session = await bot.session_manager.get_session_from_channel(channel, channel.guild)
         
-        # Get category for this session
+        # Get category for this session - ONLY use current channel's category
         botc_category = None
         if session:
             botc_category = guild.get_channel(session.category_id)
-        else:
-            botc_category = await get_botc_category(guild, db)
+        elif channel and channel.category:
+            # Only use the current channel's category - don't search for other BOTC categories
+            botc_category = channel.category
         
         if active["st"]:
             # Becoming ST - update session ownership
@@ -309,15 +309,9 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
                 session.storyteller_user_id = member.id
                 await bot.session_manager.update_session(session)
             elif botc_category and bot.session_manager:
-                # Create new session with minimal config - admin will set town square, grimoire, etc.
-                try:
-                    await bot.session_manager.create_session(
-                        guild_id=guild_id,
-                        category_id=botc_category.id,
-                        storyteller_user_id=member.id
-                    )
-                except Exception as e:
-                    logger.error(f"Failed to create session for new ST: {e}")
+                # Create new session ONLY if in a category - don't auto-create in random categories
+                # User should run /setbotc to properly configure the session first
+                logger.info(f"User {member.display_name} used *st but no session exists in category {botc_category.name}. Suggest using /setbotc.")
             
             # Remove ST prefix from other members in this category ONLY
             if botc_category:
@@ -399,10 +393,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
         msg_text = confirmation_messages.get(prefix_key)
         if msg_text:
             await send_temporary(channel, msg_text, delay=DELETE_DELAY_QUICK)
-        
-        # Send ST announcement AFTER successful nickname change
-        if prefix_key == "st" and active.get("st") and announce_channel:
-            await announce_channel.send(f"# Current Storyteller: {base_nick}")
     except discord.errors.Forbidden:
         await send_temporary(channel, "I don't have permission to change your nickname.", delay=DELETE_DELAY_NORMAL)
     except Exception as e:

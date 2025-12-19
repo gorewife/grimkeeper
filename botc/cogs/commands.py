@@ -239,9 +239,8 @@ class Commands(commands.Cog):
                 value=(
                     "`/setbotc <category>` - create/link a session to a category\n"
                     "`/settown #channel` - set Town Square voice channel (for current session)\n"
-                    "`/setannounce #channel` - set announcement channel (for current session)\n"
                     "`/setexception #channel` - set consultation channel (for current session)\n"
-                    "`/autosetup` - auto-create gothic server structure\n\n"
+                    "`/autosetup` - auto-create botc sessions\n\n"
                     "**Note:** Session commands must be run from within the session's category. Each category = one session."
                 ),
                 inline=False,
@@ -424,7 +423,7 @@ class Commands(commands.Cog):
             await self.bot.toggle_prefix(target, message.channel, "spe")
             return
         if first_word == "*st":
-            await self.bot.toggle_prefix(target, message.channel, "st", announce_channel=message.channel)
+            await self.bot.toggle_prefix(target, message.channel, "st")
             return
         if first_word == "*cost":
             await self.bot.toggle_prefix(target, message.channel, "cost")
@@ -447,17 +446,17 @@ class Commands(commands.Cog):
         if first_word == "*g" or content_lower.startswith("*g ") or first_word == "*grim" or content_lower.startswith("*grim "):
             args = content.split(maxsplit=1)
             
-            # Get session from channel context (create if doesn't exist)
+            # Get existing session from channel context - do not auto-create
             session_manager = getattr(self.bot, "session_manager", None)
             if not session_manager:
                 msg = await message.channel.send("Session manager not available.")
                 await msg.delete(delay=DELETE_DELAY_QUICK)
                 return
             
-            session = await session_manager.get_or_create_session_from_channel(message.channel, message.guild)
+            session = await session_manager.get_session_from_channel(message.channel, message.guild)
             if not session:
                 msg = await message.channel.send(
-                    "⚠️ This command must be used within a category. Move this channel into a category first."
+                    "⚠️ No session found in this category. Run `/setbotc` first to create a session."
                 )
                 await msg.delete(delay=DELETE_DELAY_MEDIUM)
                 return
