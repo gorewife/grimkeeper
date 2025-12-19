@@ -195,8 +195,19 @@ class VoiceCommands(commands.Cog):
                 return
             
             if not message.channel.category:
-                msg = await message.channel.send("⚠️ This command must be run in a channel within a category.")
+                msg = await message.channel.send("⚠️ This command must be run in a channel within a session category.")
                 await msg.delete(delay=DELETE_DELAY_ERROR)
+                return
+            
+            session_manager = getattr(self.bot, "session_manager", None)
+            if session_manager:
+                session = await session_manager.get_session(message.guild.id, message.channel.category.id)
+                if not session:
+                    msg = await message.channel.send("⚠️ This category isn't linked to a session yet. Run `/setbotc` to set it up.")
+                    await msg.delete(delay=DELETE_DELAY_ERROR)
+                    return
+            
+            if not await self._require_active_game(message):
                 return
             
             try:
