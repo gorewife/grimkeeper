@@ -4,7 +4,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.7.2-222?style=flat-square&logo=github&logoColor=white)
+![Version](https://img.shields.io/badge/version-1.7.3-222?style=flat-square&logo=github&logoColor=white)
 ![Discord](https://img.shields.io/discord/1440582976995069984?style=flat-square&logo=discord&logoColor=white&color=222&label=&labelColor=222)
 ![GitHub Repo stars](https://img.shields.io/github/stars/gorewife/grimkeeper?style=flat-square&label=&color=222&logo=github&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-222?style=flat-square&logoColor=white)
