@@ -1,4 +1,11 @@
 [
+    {   "version": "1.7.3",
+        "title":  "🎙️ Mute and unmute commands added",
+        "features": [
+            "• **New**: `*mute` & `*unmute` commands added!",
+            "• **Updated**: Github repo is now public"
+        ]
+    },
     {
         "version": "1.7.2",
         "title":  "💾 Internal Bug Fixes",
