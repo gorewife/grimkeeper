@@ -1237,52 +1237,52 @@ class SlashCog(commands.Cog):
 
         # /deletesession
         @app_commands.command(name="deletesession", description="Delete a BOTC session (Admins only)")
-        @app_commands.describe(category_id="The category ID of the session to delete")
-        async def deletesession_slash(interaction: discord.Interaction, category_id: int):
-            """Delete a BOTC session configuration."""
+        @app_commands.describe(category_id="The category ID of the session to delete (copy-paste from /sessions, numbers only)")
+        async def deletesession_slash(interaction: discord.Interaction, category_id: str):
+            """Delete a BOTC session configuration. Accepts category ID as a string and parses it."""
             # Admin check
             if not interaction.user.guild_permissions.administrator:
                 await interaction.response.send_message("Only administrators can delete sessions.", ephemeral=True)
                 return
-            
+
+            # Try to parse the string as an integer
+            try:
+                cat_id = int(category_id.strip())
+            except Exception:
+                await interaction.response.send_message(
+                    "❌ Invalid category ID. Please copy and paste only the numeric ID (no spaces or extra characters).",
+                    ephemeral=True
+                )
+                return
+
             guild_id = interaction.guild.id
             session_manager = getattr(self.bot, "session_manager", None)
-            
             if not session_manager:
                 await interaction.response.send_message("Session manager not available.", ephemeral=True)
                 return
-            
-            # Check if session exists
-            session = await session_manager.get_session(guild_id, category_id)
+            session = await session_manager.get_session(guild_id, cat_id)
             if not session:
-                await interaction.response.send_message(f"❌ No session found with ID `{category_id}`.", ephemeral=True)
+                await interaction.response.send_message(f"❌ No session found with ID `{cat_id}`.", ephemeral=True)
                 return
-            
-            # Get category name for confirmation
-            category = interaction.guild.get_channel(category_id)
-            category_name = category.name if category else f"Category {category_id}"
-            
-            # Check if there's an active game
+            category = interaction.guild.get_channel(cat_id)
+            category_name = category.name if category else f"Category {cat_id}"
             db: Database = self.bot.db
-            active_game = await db.get_active_game(guild_id, category_id)
-            
+            active_game = await db.get_active_game(guild_id, cat_id)
             warning = ""
             if active_game:
                 warning = "\n⚠️ **Warning:** This session has an active game that will be ended."
-            
-            # Delete the session
-            success = await session_manager.delete_session(guild_id, category_id)
-            
+            success = await session_manager.delete_session(guild_id, cat_id)
             if success:
                 embed = discord.Embed(
                     title="✅ Session Deleted",
                     description=f"Removed session for **{category_name}**{warning}",
                     color=discord.Color.green()
                 )
-                embed.add_field(name="Category ID", value=f"`{category_id}`", inline=False)
+                embed.add_field(name="Category ID", value=f"`{cat_id}`", inline=False)
                 await interaction.response.send_message(embed=embed, ephemeral=True)
             else:
-                await interaction.response.send_message(f"❌ Failed to delete session `{category_id}`.", ephemeral=True)
+                await interaction.response.send_message(f"❌ Failed to delete session `{cat_id}`.", ephemeral=True)
+
 
         # /language
         @app_commands.command(name="language", description="Change the bot's language for this server (Admins only)")

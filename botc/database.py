@@ -393,6 +393,26 @@ class Database:
             category_id: Optional category ID for session-scoped games
         """
         async with self.pool.acquire() as conn:
+            # First get the game_id(s) we're about to delete
+            if category_id:
+                game_ids = await conn.fetch(
+                    "SELECT game_id FROM games WHERE guild_id = $1 AND category_id = $2 AND is_active = TRUE",
+                    guild_id, category_id
+                )
+            else:
+                game_ids = await conn.fetch(
+                    "SELECT game_id FROM games WHERE guild_id = $1 AND is_active = TRUE",
+                    guild_id
+                )
+            
+            # Clear active_game_id from any sessions referencing these games
+            for row in game_ids:
+                await conn.execute(
+                    "UPDATE sessions SET active_game_id = NULL WHERE guild_id = $1 AND active_game_id = $2",
+                    guild_id, row['game_id']
+                )
+            
+            # Now delete the games
             if category_id:
                 await conn.execute(
                     "DELETE FROM games WHERE guild_id = $1 AND category_id = $2 AND is_active = TRUE",
@@ -551,10 +571,18 @@ class Database:
             if not row:
                 return None
             
+            game_id = row['game_id']
+            
+            # Clear active_game_id from any sessions referencing this game
+            await conn.execute(
+                "UPDATE sessions SET active_game_id = NULL WHERE guild_id = $1 AND active_game_id = $2",
+                guild_id, game_id
+            )
+            
             # Delete and return the game
             deleted = await conn.fetchrow(
                 "DELETE FROM games WHERE game_id = $1 RETURNING *",
-                row['game_id']
+                game_id
             )
             return dict(deleted) if deleted else None
     
@@ -576,6 +604,12 @@ class Database:
             
             if not game:
                 return False
+            
+            # Clear active_game_id from any sessions referencing this game
+            await conn.execute(
+                "UPDATE sessions SET active_game_id = NULL WHERE guild_id = $1 AND active_game_id = $2",
+                guild_id, game_id
+            )
             
             # Delete the game
             result = await conn.execute(
@@ -609,6 +643,19 @@ class Database:
     async def clear_game_history(self, guild_id: int) -> int:
         """Clear all game history for a guild. Returns count of deleted games."""
         async with self.pool.acquire() as conn:
+            # Clear active_game_id from any sessions referencing games in this guild
+            # (only clears references to completed games that are about to be deleted)
+            await conn.execute(
+                """UPDATE sessions 
+                   SET active_game_id = NULL 
+                   WHERE guild_id = $1 
+                   AND active_game_id IN (
+                       SELECT game_id FROM games 
+                       WHERE guild_id = $1 AND is_active = FALSE
+                   )""",
+                guild_id
+            )
+            
             result = await conn.execute(
                 "DELETE FROM games WHERE guild_id = $1 AND is_active = FALSE",
                 guild_id
