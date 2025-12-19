@@ -1591,8 +1591,9 @@ async def load_cogs():
         await bot.load_extension('botc.cogs.slash')
         await bot.load_extension('botc.cogs.polls')
         await bot.load_extension('botc.cogs.timers')
+        await bot.load_extension('botc.cogs.voice_commands')
         await bot.load_extension('botc.cogs.commands')
-        logger.info("Loaded all cogs: events, slash, polls, timers, commands")
+        logger.info("Loaded all cogs: events, slash, polls, timers, voice_commands, commands")
     except Exception as e:
         logger.error(f"Failed to load cogs: {e}")
         raise
