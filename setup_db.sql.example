@@ -1,0 +1,20 @@
+-- Database Setup Script for Grimkeeper
+-- This is an EXAMPLE file - copy to setup_db.sql and update with your credentials
+
+-- Create database
+CREATE DATABASE grimkeeper;
+
+-- Create user with your own secure password
+CREATE USER grimkeeper WITH PASSWORD 'your_secure_password_here';
+
+-- Grant privileges
+GRANT ALL PRIVILEGES ON DATABASE grimkeeper TO grimkeeper;
+
+-- Connect to database and grant schema privileges
+\c grimkeeper
+GRANT ALL ON SCHEMA public TO grimkeeper;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO grimkeeper;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO grimkeeper;
+
+-- Note: After creating the database and user, update your .env file:
+-- DATABASE_URL=postgresql://grimkeeper:your_secure_password_here@localhost:5432/grimkeeper

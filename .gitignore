@@ -9,7 +9,6 @@ assets/wiki_images/
 *.env
 
 # Database credentials and dumps
-*.sql
 *.db
 *.sqlite
 *.dump
@@ -75,6 +74,4 @@ locales/*
 
 # Ignore extract_strings.py in locales
 locales/extract_strings.py
-migrations/
-setup_db.sql.example
 
