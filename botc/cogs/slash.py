@@ -1214,7 +1214,7 @@ class SlashCog(commands.Cog):
         # /deletesession
         @app_commands.command(name="deletesession", description="Delete a BOTC session (Admins only)")
         @app_commands.describe(category_id="The category ID of the session to delete (from /sessions)")
-        async def deletesession_slash(interaction: discord.Interaction, category_id: int):
+        async def deletesession_slash(interaction: discord.Interaction, category_id: str):
             """Delete a BOTC session configuration."""
             # Admin check
             if not interaction.user.guild_permissions.administrator:
