@@ -1,4 +1,18 @@
 [
+    {
+        "version": "1.8.0",
+        "title": "🎨 Stats Cards v2, Custom Admin Roles, & Translations",
+        "features": [
+            "• **New**: Stats cards v2",
+            "• **New**: HTML/CSS rendering with Playwright",
+            "• **New**: `/setadmin` - Custom admin roles per server",
+            "• **New**: Spanish and Russian translation (use `/language`)",
+            "• **New**: `/stprofile` custom_title parameter",
+            "• **Updated**: All admin checks support custom roles",
+            "• **Updated**: Stats cards use antique gold accents (400x750px)",
+            "• **Updated**: Profiles simplified - removed favorite_script and style"
+        ]
+    },
     {   "version": "1.7.3",
         "title":  "🎙️ Mute and unmute commands added",
         "features": [
