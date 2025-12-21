@@ -4,7 +4,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.7.3-222?style=flat-square&logo=github&logoColor=white)
+![Version](https://img.shields.io/badge/version-1.8.0-222?style=flat-square&logo=github&logoColor=white)
 ![Discord](https://img.shields.io/discord/1440582976995069984?style=flat-square&logo=discord&logoColor=white&color=222&label=&labelColor=222)
 ![GitHub Repo stars](https://img.shields.io/github/stars/gorewife/grimkeeper?style=flat-square&label=&color=222&logo=github&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-222?style=flat-square&logoColor=white)
@@ -33,6 +33,8 @@ A Discord bot for Blood on the Clocktower games. Manages voice channels, tracks 
 **Game Tracking & Stats:**
 - Track games with `/startgame` and `/endgame`
 - Server-wide and per-storyteller statistics
+- Custom stat cards (400x750px tarot layout)
+- Customizable profiles with pronouns and titles
 - Game history with win rates and script breakdowns
 - Automatic player tracking by Discord ID
 
@@ -42,9 +44,11 @@ A Discord bot for Blood on the Clocktower games. Manages voice channels, tracks 
 - Character icons and team-based color coding
 
 **Utilities:**
-- Timers that survive bot restarts
-- Script polls with automatic tallying
-- Basic rate limiting
+- Persistent timers
+- Script polls with auto-tallying
+- Multi-language support (English, Spanish, Russian)
+- Custom admin roles
+- Rate limiting
 
 ---
 
@@ -159,6 +163,6 @@ Grimkeeper is a community-created Discord bot and is not affiliated with or endo
 
 ---
 
-**Version**: 1.7.3 | **Maintainer**: hystericca
+**Version**: 1.8.0 | **Maintainer**: hystericca
 
 pip install asyncpg
