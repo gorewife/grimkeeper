@@ -161,3 +161,4 @@ Grimkeeper is a community-created Discord bot and is not affiliated with or endo
 
 **Version**: 1.7.3 | **Maintainer**: hystericca
 
+pip install asyncpg
