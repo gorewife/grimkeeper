@@ -1183,8 +1183,6 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
                     inline=True
                 )
             
-            embed.set_footer(text=f"Grimkeeper v{VERSION} • Use /ststats without user to see all")
-            
             # Generate stats card
             try:
                 from botc.card_generator import generate_stats_card
@@ -1215,9 +1213,9 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
                 )
                 
                 if card_buffer:
-                    # Attach card as file
+                    # Send only the card image
                     card_file = discord.File(fp=card_buffer, filename=f"stats_{user.id}.png")
-                    await interaction.response.send_message(embed=embed, file=card_file)
+                    await interaction.response.send_message(file=card_file)
                 else:
                     # Fallback to embed only if card generation fails
                     await interaction.response.send_message(embed=embed)
