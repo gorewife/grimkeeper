@@ -733,8 +733,20 @@ class SlashCog(commands.Cog):
         @app_commands.describe(
             pronouns="Your pronouns (e.g., she/her, he/him, they/them)",
             custom_title="Your custom title (e.g., Gamer, Farmer, Wizard) - max 15 chars",
-            color_theme="Card color theme (gold, silver, crimson, emerald, amethyst, sapphire, rose, copper, midnight, jade)"
+            color_theme="Card color theme"
         )
+        @app_commands.choices(color_theme=[
+            app_commands.Choice(name="Gold", value="gold"),
+            app_commands.Choice(name="Silver", value="silver"),
+            app_commands.Choice(name="Crimson", value="crimson"),
+            app_commands.Choice(name="Emerald", value="emerald"),
+            app_commands.Choice(name="Amethyst", value="amethyst"),
+            app_commands.Choice(name="Sapphire", value="sapphire"),
+            app_commands.Choice(name="Rose", value="rose"),
+            app_commands.Choice(name="Copper", value="copper"),
+            app_commands.Choice(name="Midnight", value="midnight"),
+            app_commands.Choice(name="Jade", value="jade")
+        ])
         async def stprofile_slash(
             interaction: discord.Interaction,
             pronouns: str = None,
@@ -759,15 +771,6 @@ class SlashCog(commands.Cog):
                 return
             if custom_title and len(custom_title) > 15:
                 await interaction.response.send_message("❌ Custom title must be 15 characters or less.", ephemeral=True)
-                return
-            
-            # Validate color_theme if provided
-            valid_themes = ['gold', 'silver', 'crimson', 'emerald', 'amethyst', 'sapphire', 'rose', 'copper', 'midnight', 'jade']
-            if color_theme and color_theme.lower() not in valid_themes:
-                await interaction.response.send_message(
-                    f"❌ Invalid color theme. Choose from: {', '.join(valid_themes)}",
-                    ephemeral=True
-                )
                 return
             
             try:
