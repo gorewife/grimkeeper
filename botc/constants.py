@@ -5,7 +5,7 @@ imported by other modules as part of a gradual refactor.
 """
 from __future__ import annotations
 
-VERSION = "1.7.3"
+VERSION = "1.8.0"
 
 # ============================================================================
 # COLOR PALETTE - Grimkeeper Theme
