@@ -8,6 +8,7 @@ from __future__ import annotations
 import base64
 import io
 import logging
+import unicodedata
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -15,6 +16,40 @@ from jinja2 import Environment, FileSystemLoader
 from playwright.async_api import async_playwright
 
 logger = logging.getLogger('botc_bot')
+
+
+def normalize_username(username: str) -> str:
+    """Normalize Unicode characters in username to ASCII equivalents.
+    
+    Converts fancy Unicode characters (mathematical alphanumerics, decorative
+    symbols, etc.) to their ASCII equivalents so they render in web fonts.
+    
+    Args:
+        username: Original username with potentially unsupported Unicode chars
+        
+    Returns:
+        Normalized username with ASCII-compatible characters
+    """
+    # NFD decomposition separates base characters from combining marks
+    normalized = unicodedata.normalize('NFD', username)
+    
+    # Filter to ASCII-compatible characters and combining marks
+    ascii_chars = []
+    for char in normalized:
+        # Try to get ASCII equivalent via NFKD (compatibility decomposition)
+        decomp = unicodedata.normalize('NFKD', char)
+        if decomp.isascii():
+            ascii_chars.append(decomp)
+        elif unicodedata.category(char) not in ('Mn', 'Mc', 'Me', 'Sk', 'So'):
+            # If not a modifier/symbol, try decomposition again
+            # This handles mathematical alphanumerics like 𝒯 → T
+            for c in decomp:
+                if c.isascii():
+                    ascii_chars.append(c)
+    
+    result = ''.join(ascii_chars).strip()
+    # Fallback to original if normalization produced nothing
+    return result if result else username
 
 # Template directory
 TEMPLATE_DIR = Path(__file__).parent / 'templates'
@@ -63,6 +98,9 @@ async def generate_stats_card(
         BytesIO containing PNG image data, or None if generation fails
     """
     try:
+        # Normalize username to ASCII-compatible characters
+        normalized_username = normalize_username(username)
+        
         # Calculate percentages and balance
         good_rate = round((good_wins / total_games * 100) if total_games > 0 else 0, 1)
         evil_rate = round((evil_wins / total_games * 100) if total_games > 0 else 0, 1)
@@ -114,7 +152,7 @@ async def generate_stats_card(
             display_title = custom_title[:15]
         
         html_content = template.render(
-            username=username,
+            username=normalized_username,
             avatar_url=avatar_url,
             pronouns=pronouns,
             custom_title=display_title,
