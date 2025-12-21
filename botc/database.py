@@ -1053,8 +1053,8 @@ class Database:
         """
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow(
-                """SELECT pronouns, custom_title, created_at, updated_at
-                   FROM storyteller_profiles
+                """SELECT pronouns, custom_title, color_theme, created_at, updated_at
+                   FROM storyteller_profiles_global
                    WHERE user_id = $1""",
                 user_id
             )
@@ -1064,7 +1064,8 @@ class Database:
         self,
         user_id: int,
         pronouns: Optional[str] = None,
-        custom_title: Optional[str] = None
+        custom_title: Optional[str] = None,
+        color_theme: Optional[str] = None
     ) -> bool:
         """Create or update storyteller profile (bot-wide).
         
@@ -1072,20 +1073,22 @@ class Database:
             user_id: Discord user ID
             pronouns: User pronouns
             custom_title: Custom title for card (e.g., "Gamer", "Farmer")
+            color_theme: Color theme name (gold, silver, crimson, etc.)
             
         Returns:
             True if successful
         """
         async with self.pool.acquire() as conn:
             await conn.execute(
-                """INSERT INTO storyteller_profiles (user_id, pronouns, custom_title, updated_at)
-                   VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+                """INSERT INTO storyteller_profiles_global (user_id, pronouns, custom_title, color_theme, updated_at)
+                   VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
                    ON CONFLICT (user_id)
                    DO UPDATE SET
-                       pronouns = COALESCE($2, storyteller_profiles.pronouns),
-                       custom_title = COALESCE($3, storyteller_profiles.custom_title),
+                       pronouns = COALESCE($2, storyteller_profiles_global.pronouns),
+                       custom_title = COALESCE($3, storyteller_profiles_global.custom_title),
+                       color_theme = COALESCE($4, storyteller_profiles_global.color_theme),
                        updated_at = CURRENT_TIMESTAMP""",
-                user_id, pronouns, custom_title
+                user_id, pronouns, custom_title, color_theme
             )
             return True
 
@@ -1094,17 +1097,17 @@ class Database:
         
         Args:
             user_id: Discord user ID
-            field: Field name to clear (pronouns or custom_title)
+            field: Field name to clear (pronouns, custom_title, or color_theme)
             
         Returns:
             True if successful
         """
-        if field not in ['pronouns', 'custom_title']:
+        if field not in ['pronouns', 'custom_title', 'color_theme']:
             return False
         
         async with self.pool.acquire() as conn:
             await conn.execute(
-                f"""UPDATE storyteller_profiles
+                f"""UPDATE storyteller_profiles_global
                     SET {field} = NULL, updated_at = CURRENT_TIMESTAMP
                     WHERE user_id = $1""",
                 user_id

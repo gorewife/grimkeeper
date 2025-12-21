@@ -732,21 +732,23 @@ class SlashCog(commands.Cog):
         @app_commands.command(name="stprofile", description="Set your storyteller profile for stat cards")
         @app_commands.describe(
             pronouns="Your pronouns (e.g., she/her, he/him, they/them)",
-            custom_title="Your custom title (e.g., Gamer, Farmer, Wizard) - max 15 chars"
+            custom_title="Your custom title (e.g., Gamer, Farmer, Wizard) - max 15 chars",
+            color_theme="Card color theme (gold, silver, crimson, emerald, amethyst, sapphire, rose, copper, midnight, jade)"
         )
         async def stprofile_slash(
             interaction: discord.Interaction,
             pronouns: str = None,
-            custom_title: str = None
+            custom_title: str = None,
+            color_theme: str = None
         ):
             """Set storyteller profile fields."""
             db: Database = self.bot.db
             
             # Validate at least one field provided
-            if not any([pronouns, custom_title]):
+            if not any([pronouns, custom_title, color_theme]):
                 await interaction.response.send_message(
                     "❌ Please provide at least one field to update.\n"
-                    "**Available fields:** `pronouns`, `custom_title`",
+                    "**Available fields:** `pronouns`, `custom_title`, `color_theme`",
                     ephemeral=True
                 )
                 return
@@ -759,12 +761,22 @@ class SlashCog(commands.Cog):
                 await interaction.response.send_message("❌ Custom title must be 15 characters or less.", ephemeral=True)
                 return
             
+            # Validate color_theme if provided
+            valid_themes = ['gold', 'silver', 'crimson', 'emerald', 'amethyst', 'sapphire', 'rose', 'copper', 'midnight', 'jade']
+            if color_theme and color_theme.lower() not in valid_themes:
+                await interaction.response.send_message(
+                    f"❌ Invalid color theme. Choose from: {', '.join(valid_themes)}",
+                    ephemeral=True
+                )
+                return
+            
             try:
                 # Update profile (bot-wide)
                 success = await db.set_storyteller_profile(
                     interaction.user.id,
                     pronouns,
-                    custom_title
+                    custom_title,
+                    color_theme.lower() if color_theme else None
                 )
                 
                 if success:
@@ -774,6 +786,8 @@ class SlashCog(commands.Cog):
                         updates.append(f"**Pronouns:** {pronouns}")
                     if custom_title:
                         updates.append(f"**Title:** The {custom_title}")
+                    if color_theme:
+                        updates.append(f"**Color:** {color_theme.lower()}")
                     
                     embed = discord.Embed(
                         title="✅ Profile Updated",

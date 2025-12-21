@@ -57,6 +57,80 @@ ASSETS_DIR = Path(__file__).parent.parent / 'assets'
 CARD_WIDTH = 400
 CARD_HEIGHT = 750
 
+# Predefined color themes for storyteller cards
+COLOR_THEMES = {
+    'gold': {
+        'primary_color': '#c9a875',
+        'secondary_color': '#8b7355',
+        'accent_color': '#c9a875',
+        'text_color': '#ffffff',
+        'background_color': '#000000'
+    },
+    'silver': {
+        'primary_color': '#c0c0c0',
+        'secondary_color': '#808080',
+        'accent_color': '#e8e8e8',
+        'text_color': '#ffffff',
+        'background_color': '#000000'
+    },
+    'crimson': {
+        'primary_color': '#dc143c',
+        'secondary_color': '#8b0000',
+        'accent_color': '#ff6b6b',
+        'text_color': '#ffffff',
+        'background_color': '#000000'
+    },
+    'emerald': {
+        'primary_color': '#50c878',
+        'secondary_color': '#2e8b57',
+        'accent_color': '#7fffd4',
+        'text_color': '#ffffff',
+        'background_color': '#000000'
+    },
+    'amethyst': {
+        'primary_color': '#9966cc',
+        'secondary_color': '#663399',
+        'accent_color': '#b19cd9',
+        'text_color': '#ffffff',
+        'background_color': '#000000'
+    },
+    'sapphire': {
+        'primary_color': '#0f52ba',
+        'secondary_color': '#082567',
+        'accent_color': '#6495ed',
+        'text_color': '#ffffff',
+        'background_color': '#000000'
+    },
+    'rose': {
+        'primary_color': '#ff69b4',
+        'secondary_color': '#c71585',
+        'accent_color': '#ffb6c1',
+        'text_color': '#ffffff',
+        'background_color': '#000000'
+    },
+    'copper': {
+        'primary_color': '#b87333',
+        'secondary_color': '#8b4513',
+        'accent_color': '#cd7f32',
+        'text_color': '#ffffff',
+        'background_color': '#000000'
+    },
+    'midnight': {
+        'primary_color': '#4169e1',
+        'secondary_color': '#191970',
+        'accent_color': '#7b68ee',
+        'text_color': '#ffffff',
+        'background_color': '#000000'
+    },
+    'jade': {
+        'primary_color': '#00a86b',
+        'secondary_color': '#006400',
+        'accent_color': '#3cb371',
+        'text_color': '#ffffff',
+        'background_color': '#000000'
+    }
+}
+
 
 async def generate_stats_card(
     username: str,
@@ -73,7 +147,8 @@ async def generate_stats_card(
     bmr_games: int = 0,
     avg_duration_minutes: Optional[float] = None,
     avg_players: Optional[float] = None,
-    custom_title: Optional[str] = None
+    custom_title: Optional[str] = None,
+    color_theme: Optional[str] = None
 ) -> Optional[io.BytesIO]:
     """Generate a stats card image from HTML template.
     
@@ -93,6 +168,8 @@ async def generate_stats_card(
         avg_duration_minutes: Average game duration in minutes (optional)
         avg_players: Average player count (optional)
         custom_title: Custom title to display (max 15 chars, e.g., "Farmer", "Gamer")
+        color_theme: Color theme name (gold, silver, crimson, emerald, amethyst, 
+                     sapphire, rose, copper, midnight, jade) or None for default gold
         
     Returns:
         BytesIO containing PNG image data, or None if generation fails
@@ -151,6 +228,9 @@ async def generate_stats_card(
         if custom_title:
             display_title = custom_title[:15]
         
+        # Get color theme
+        theme_colors = COLOR_THEMES.get(color_theme, COLOR_THEMES['gold'])
+        
         html_content = template.render(
             username=normalized_username,
             avatar_url=avatar_url,
@@ -171,7 +251,8 @@ async def generate_stats_card(
             avg_players=avg_players,
             good_icon=good_icon_b64,
             evil_icon=evil_icon_b64,
-            sparkle_icon=sparkle_b64
+            sparkle_icon=sparkle_b64,
+            **theme_colors  # Unpack color theme variables
         )
         
         # Launch browser and render

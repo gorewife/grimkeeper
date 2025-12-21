@@ -1211,7 +1211,8 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
                     bmr_games=stat.get('bmr_games', 0) or 0,
                     avg_duration_minutes=avg_duration_minutes,
                     avg_players=avg_players,
-                    custom_title=profile.get('custom_title') if profile else None
+                    custom_title=profile.get('custom_title') if profile else None,
+                    color_theme=profile.get('color_theme') if profile else None
                 )
                 
                 if card_buffer:

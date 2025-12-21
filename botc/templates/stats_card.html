@@ -6,6 +6,15 @@
     <style>
         @import url('https://fonts.cdnfonts.com/css/hustleactlife');
         
+        :root {
+            /* Color Theme Variables */
+            --primary-color: {{ primary_color|default('#c9a875') }};
+            --secondary-color: {{ secondary_color|default('#8b7355') }};
+            --accent-color: {{ accent_color|default('#c9a875') }};
+            --text-color: {{ text_color|default('#ffffff') }};
+            --background-color: {{ background_color|default('#000000') }};
+        }
+        
         * {
             margin: 0;
             padding: 0;
@@ -14,7 +23,7 @@
         
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
-            background: #000000;
+            background: var(--background-color);
             width: 400px;
             height: 750px;
             display: flex;
@@ -24,38 +33,139 @@
         }
         
         .card {
-            background: #000000;
-            border: 3px solid #c9a875;
+            background: var(--background-color);
+            border: 5px solid var(--primary-color);
             width: 100%;
             height: 100%;
             position: relative;
             overflow: hidden;
+            box-shadow: 
+                inset 0 0 30px color-mix(in srgb, var(--primary-color) 25%, transparent),
+                inset 0 0 5px color-mix(in srgb, var(--primary-color) 40%, transparent),
+                0 0 15px color-mix(in srgb, var(--primary-color) 20%, transparent);
         }
         
-        .border-inner {
+        .border-outer {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            right: 6px;
+            bottom: 6px;
+            border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+        }
+        
+        .border-middle {
             position: absolute;
             top: 10px;
             left: 10px;
             right: 10px;
             bottom: 10px;
-            border: 1px solid #8b7355;
+            border: 1px solid color-mix(in srgb, var(--secondary-color) 50%, transparent);
+        }
+        
+        .border-inner {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            right: 14px;
+            bottom: 14px;
+            border: 2px solid var(--secondary-color);
+            box-shadow: 0 0 12px color-mix(in srgb, var(--secondary-color) 40%, transparent);
         }
         
         .border-corner {
             position: absolute;
-            width: 16px;
-            height: 16px;
-            border: 1px solid #c9a875;
+            width: 28px;
+            height: 28px;
+            border: 2px solid var(--primary-color);
         }
         
-        .corner-tl { top: 18px; left: 18px; border-right: none; border-bottom: none; }
-        .corner-tr { top: 18px; right: 18px; border-left: none; border-bottom: none; }
-        .corner-bl { bottom: 18px; left: 18px; border-right: none; border-top: none; }
-        .corner-br { bottom: 18px; right: 18px; border-left: none; border-top: none; }
+        .corner-tl { top: 22px; left: 22px; border-right: none; border-bottom: none; }
+        .corner-tr { top: 22px; right: 22px; border-left: none; border-bottom: none; }
+        .corner-bl { bottom: 22px; left: 22px; border-right: none; border-top: none; }
+        .corner-br { bottom: 22px; right: 22px; border-left: none; border-top: none; }
+        
+        .border-corner-inner {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border: 1px solid color-mix(in srgb, var(--primary-color) 60%, transparent);
+        }
+        
+        .corner-inner-tl { top: 27px; left: 27px; border-right: none; border-bottom: none; }
+        .corner-inner-tr { top: 27px; right: 27px; border-left: none; border-bottom: none; }
+        .corner-inner-bl { bottom: 27px; left: 27px; border-right: none; border-top: none; }
+        .corner-inner-br { bottom: 27px; right: 27px; border-left: none; border-top: none; }
+        
+        .corner-accent {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: var(--accent-color);
+            transform: rotate(45deg);
+            box-shadow: 0 0 8px color-mix(in srgb, var(--accent-color) 50%, transparent);
+        }
+        
+        .accent-tl { top: 17px; left: 17px; }
+        .accent-tr { top: 17px; right: 17px; }
+        .accent-bl { bottom: 17px; left: 17px; }
+        .accent-br { bottom: 17px; right: 17px; }
+        
+        .corner-line {
+            position: absolute;
+            background: linear-gradient(to right, transparent, var(--accent-color), transparent);
+            height: 1px;
+        }
+        
+        .line-top { top: 18px; left: 60px; right: 60px; }
+        .line-bottom { bottom: 18px; left: 60px; right: 60px; }
+        .line-left { left: 18px; top: 60px; bottom: 60px; width: 1px; background: linear-gradient(to bottom, transparent, var(--accent-color), transparent); }
+        .line-right { right: 18px; top: 60px; bottom: 60px; width: 1px; background: linear-gradient(to bottom, transparent, var(--accent-color), transparent); }
+        
+        .corner-ornament {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            box-shadow: 0 0 4px color-mix(in srgb, var(--accent-color) 60%, transparent);
+        }
+        
+        .ornament-tl-1 { top: 30px; left: 58px; }
+        .ornament-tl-2 { top: 58px; left: 30px; }
+        .ornament-tr-1 { top: 30px; right: 58px; }
+        .ornament-tr-2 { top: 58px; right: 30px; }
+        .ornament-bl-1 { bottom: 30px; left: 58px; }
+        .ornament-bl-2 { bottom: 58px; left: 30px; }
+        .ornament-br-1 { bottom: 30px; right: 58px; }
+        .ornament-br-2 { bottom: 58px; right: 30px; }
+        
+        .edge-ornament {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: color-mix(in srgb, var(--accent-color) 50%, transparent);
+            border-radius: 50%;
+        }
+        
+        .edge-top-1 { top: 18px; left: 100px; }
+        .edge-top-2 { top: 18px; left: 200px; }
+        .edge-top-3 { top: 18px; right: 100px; }
+        .edge-bottom-1 { bottom: 18px; left: 100px; }
+        .edge-bottom-2 { bottom: 18px; left: 200px; }
+        .edge-bottom-3 { bottom: 18px; right: 100px; }
+        .edge-left-1 { left: 18px; top: 150px; }
+        .edge-left-2 { left: 18px; top: 300px; }
+        .edge-left-3 { left: 18px; top: 450px; }
+        .edge-left-4 { left: 18px; top: 600px; }
+        .edge-right-1 { right: 18px; top: 150px; }
+        .edge-right-2 { right: 18px; top: 300px; }
+        .edge-right-3 { right: 18px; top: 450px; }
+        .edge-right-4 { right: 18px; top: 600px; }
         
         .content {
             position: relative;
-            padding: 28px 24px 20px 24px;
+            padding: 28px 28px 24px 28px;
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -72,11 +182,11 @@
             font-family: 'Helvetica', sans-serif;
             font-size: 11px;
             font-weight: 400;
-            color: #c9a875;
+            color: var(--primary-color);
             letter-spacing: 3px;
             text-transform: uppercase;
-            border-top: 1px solid #8b7355;
-            border-bottom: 1px solid #8b7355;
+            border-top: 1px solid var(--secondary-color);
+            border-bottom: 1px solid var(--secondary-color);
             padding: 8px 0;
         }
         
@@ -88,7 +198,7 @@
             width: 140px;
             height: 140px;
             object-fit: cover;
-            border: 3px solid #c9a875;
+            border: 3px solid var(--primary-color);
             border-radius: 50%;
             margin-bottom: 10px;
         }
@@ -97,7 +207,7 @@
             font-family: 'HustleActLife', serif;
             font-size: 30px;
             font-weight: 700;
-            color: #ffffff;
+            color: var(--text-color);
             letter-spacing: 1px;
             margin-bottom: 4px;
         }
@@ -125,60 +235,152 @@
         }
         
         .divider {
-            width: 50%;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 16px 0;
+            gap: 12px;
+        }
+        
+        .divider-line {
+            flex: 1;
             height: 1px;
-            background: #8b7355;
-            margin: 14px 0;
+            background: linear-gradient(to right, transparent, var(--secondary-color), transparent);
+        }
+        
+        .divider-ornament {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            box-shadow: 0 0 6px color-mix(in srgb, var(--accent-color) 50%, transparent);
         }
         
         .main-stats {
-            margin-bottom: 14px;
+            margin-bottom: 16px;
             width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
         
-        .stat-row {
+        .stat-card {
+            position: relative;
+            background: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.00) 100%);
+            border: 1px solid color-mix(in srgb, var(--primary-color) 30%, transparent);
+            border-radius: 4px;
+            padding: 16px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 16px;
-            border-bottom: 1px solid #222222;
+            box-shadow: 
+                inset 0 1px 0 color-mix(in srgb, var(--primary-color) 10%, transparent),
+                0 2px 8px rgba(0,0,0,0.3);
         }
         
-        .stat-row:last-child {
+        .stat-card::before,
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border: 1px solid var(--accent-color);
+        }
+        
+        .stat-card::before {
+            top: 8px;
+            left: 8px;
+            border-right: none;
             border-bottom: none;
+        }
+        
+        .stat-card::after {
+            bottom: 8px;
+            right: 8px;
+            border-left: none;
+            border-top: none;
         }
         
         .stat-left {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
         }
         
         .stat-icon {
-            width: 40px;
-            height: 40px;
+            width: 45px;
+            height: 45px;
             object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
         }
         
         .stat-label {
             font-family: 'Helvetica', sans-serif;
-            font-size: 18px;
+            font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #c9a875;
+            letter-spacing: 2px;
+            color: #ffffff;
+            opacity: 0.9;
+        }
+        
+        .stat-right {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
         }
         
         .stat-value {
             font-family: 'HustleActLife', serif;
-            font-size: 30px;
+            font-size: 36px;
             font-weight: 700;
-            color: #ffffff;
+            color: var(--text-color);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
         
         .stat-sub {
-            font-size: 14px;
-            color: #666666;
-            margin-left: 6px;
+            font-size: 16px;
+            color: #ffffff;
+            opacity: 0.6;
+        }
+        
+        .balance-section {
+            position: relative;
+            margin: 6px 0 16px 0;
+            padding: 14px;
+            border: 1px solid color-mix(in srgb, var(--accent-color) 40%, transparent);
+            border-radius: 4px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.00) 100%);
+        }
+        
+        .balance-section::before {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            right: 4px;
+            bottom: 4px;
+            border: 1px solid color-mix(in srgb, var(--accent-color) 20%, transparent);
+            border-radius: 2px;
+            pointer-events: none;
+        }
+        
+        .balance-label {
+            font-family: 'Helvetica', sans-serif;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            color: #ffffff;
+            margin-bottom: 8px;
+            opacity: 0.8;
+        }
+        
+        .balance-value {
+            font-family: 'HustleActLife', serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--text-color);
+            text-shadow: 0 0 20px color-mix(in srgb, var(--accent-color) 40%, transparent);
         }
         
         .extra-stats {
@@ -186,61 +388,69 @@
             flex-direction: column;
             gap: 12px;
             width: 100%;
-            margin-top: 14px;
+            margin-top: 0;
         }
         
         .extra-stats-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px 16px;
+            gap: 12px;
         }
         
-        .script-stats {
-            display: flex;
-            gap: 16px;
-            justify-content: center;
-            margin-top: 14px;
-            padding-top: 14px;
-            border-top: 1px solid #222222;
-        }
-        
-        .script-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .script-icon {
-            font-size: 28px;
-        }
-        
-        .script-count {
-            font-family: 'HustleActLife', serif;
-            font-size: 22px;
-            font-weight: 600;
-            color: #ffffff;
+        .total-section {
+            grid-column: 1 / -1;
+            text-align: center;
         }
         
         .extra-item {
+            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
+            padding: 14px 10px;
+            border: 1px solid color-mix(in srgb, var(--primary-color) 25%, transparent);
+            border-radius: 4px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.00) 100%);
+        }
+        
+        .extra-item::before {
+            content: '';
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            width: 6px;
+            height: 6px;
+            border-top: 1px solid var(--accent-color);
+            border-left: 1px solid var(--accent-color);
+        }
+        
+        .extra-item::after {
+            content: '';
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            width: 6px;
+            height: 6px;
+            border-bottom: 1px solid var(--accent-color);
+            border-right: 1px solid var(--accent-color);
         }
         
         .extra-label {
             font-family: 'Helvetica', sans-serif;
-            font-size: 14px;
+            font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 1.5px;
-            color: #c9a875;
+            color: #ffffff;
+            opacity: 0.9;
         }
         
         .extra-value {
             font-family: 'HustleActLife', serif;
             font-size: 24px;
             font-weight: 600;
-            color: #ffffff;
+            color: var(--text-color);
+            text-shadow: 0 2px 6px rgba(0,0,0,0.4);
         }
         
         .footer {
@@ -255,30 +465,84 @@
         
         .sparkle {
             position: absolute;
-            opacity: 0.3;
+            opacity: 1;
             mix-blend-mode: screen;
             z-index: 0;
         }
         
-        .sparkle-1 { top: 45px; left: 22px; width: 60px; height: 60px; }
-        .sparkle-2 { top: 135px; right: 38px; width: 40px; height: 40px; }
-        .sparkle-3 { top: 215px; left: 30px; width: 70px; height: 70px; }
-        .sparkle-4 { top: 298px; right: 25px; width: 50px; height: 50px; }
-        .sparkle-5 { top: 385px; left: 42px; width: 55px; height: 55px; }
-        .sparkle-6 { top: 465px; right: 35px; width: 45px; height: 45px; }
-        .sparkle-7 { top: 543px; left: 28px; width: 65px; height: 65px; }
-        .sparkle-8 { top: 618px; right: 30px; width: 50px; height: 50px; }
-        .sparkle-9 { top: 175px; right: 50px; width: 35px; height: 35px; }
-        .sparkle-10 { top: 425px; left: 20px; width: 40px; height: 40px; }
+        .sparkle-1 { top: 120px; left: 65px; width: 38px; height: 38px; }
+        .sparkle-2 { top: 155px; right: 75px; width: 12px; height: 12px; }
+        .sparkle-3 { top: 195px; left: 280px; width: 28px; height: 28px; }
+        .sparkle-4 { top: 230px; left: 85px; width: 14px; height: 14px; }
+        .sparkle-5 { top: 265px; right: 95px; width: 20px; height: 20px; }
+        .sparkle-6 { top: 305px; left: 270px; width: 10px; height: 10px; }
+        .sparkle-7 { top: 340px; right: 260px; width: 16px; height: 16px; }
+        .sparkle-8 { top: 385px; left: 100px; width: 35px; height: 35px; }
+        .sparkle-9 { top: 425px; right: 110px; width: 13px; height: 13px; }
+        .sparkle-10 { top: 465px; left: 255px; width: 24px; height: 24px; }
+        .sparkle-11 { top: 500px; left: 90px; width: 11px; height: 11px; }
+        .sparkle-12 { top: 540px; right: 100px; width: 30px; height: 30px; }
+        .sparkle-13 { top: 580px; left: 245px; width: 15px; height: 15px; }
+        .sparkle-14 { top: 615px; right: 265px; width: 19px; height: 19px; }
+        .sparkle-15 { top: 655px; left: 105px; width: 26px; height: 26px; }
+        .sparkle-16 { top: 175px; right: 250px; width: 17px; height: 17px; }
+        .sparkle-17 { top: 285px; left: 120px; width: 40px; height: 40px; }
+        .sparkle-18 { top: 370px; right: 80px; width: 9px; height: 9px; }
+        .sparkle-19 { top: 445px; left: 300px; width: 22px; height: 22px; }
+        .sparkle-20 { top: 520px; right: 285px; width: 12px; height: 12px; }
+        .sparkle-21 { top: 595px; left: 275px; width: 33px; height: 33px; }
+        .sparkle-22 { top: 220px; right: 120px; width: 18px; height: 18px; }
     </style>
 </head>
 <body>
     <div class="card">
+        <div class="border-outer"></div>
+        <div class="border-middle"></div>
         <div class="border-inner"></div>
+        
         <div class="border-corner corner-tl"></div>
         <div class="border-corner corner-tr"></div>
         <div class="border-corner corner-bl"></div>
         <div class="border-corner corner-br"></div>
+        
+        <div class="border-corner-inner corner-inner-tl"></div>
+        <div class="border-corner-inner corner-inner-tr"></div>
+        <div class="border-corner-inner corner-inner-bl"></div>
+        <div class="border-corner-inner corner-inner-br"></div>
+        
+        <div class="corner-accent accent-tl"></div>
+        <div class="corner-accent accent-tr"></div>
+        <div class="corner-accent accent-bl"></div>
+        <div class="corner-accent accent-br"></div>
+        
+        <div class="corner-line line-top"></div>
+        <div class="corner-line line-bottom"></div>
+        <div class="corner-line line-left"></div>
+        <div class="corner-line line-right"></div>
+        
+        <div class="corner-ornament ornament-tl-1"></div>
+        <div class="corner-ornament ornament-tl-2"></div>
+        <div class="corner-ornament ornament-tr-1"></div>
+        <div class="corner-ornament ornament-tr-2"></div>
+        <div class="corner-ornament ornament-bl-1"></div>
+        <div class="corner-ornament ornament-bl-2"></div>
+        <div class="corner-ornament ornament-br-1"></div>
+        <div class="corner-ornament ornament-br-2"></div>
+        
+        <div class="edge-ornament edge-top-1"></div>
+        <div class="edge-ornament edge-top-2"></div>
+        <div class="edge-ornament edge-top-3"></div>
+        <div class="edge-ornament edge-bottom-1"></div>
+        <div class="edge-ornament edge-bottom-2"></div>
+        <div class="edge-ornament edge-bottom-3"></div>
+        <div class="edge-ornament edge-left-1"></div>
+        <div class="edge-ornament edge-left-2"></div>
+        <div class="edge-ornament edge-left-3"></div>
+        <div class="edge-ornament edge-left-4"></div>
+        <div class="edge-ornament edge-right-1"></div>
+        <div class="edge-ornament edge-right-2"></div>
+        <div class="edge-ornament edge-right-3"></div>
+        <div class="edge-ornament edge-right-4"></div>
         
         <img src="{{ sparkle_icon }}" class="sparkle sparkle-1" alt="">
         <img src="{{ sparkle_icon }}" class="sparkle sparkle-2" alt="">
@@ -290,6 +554,18 @@
         <img src="{{ sparkle_icon }}" class="sparkle sparkle-8" alt="">
         <img src="{{ sparkle_icon }}" class="sparkle sparkle-9" alt="">
         <img src="{{ sparkle_icon }}" class="sparkle sparkle-10" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-11" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-12" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-13" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-14" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-15" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-16" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-17" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-18" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-19" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-20" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-21" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-22" alt="">
         
         <div class="content">
             <div class="header">
@@ -304,32 +580,39 @@
                 {% endif %}
             </div>
             
-            <div class="divider"></div>
+            <div class="divider">
+                <div class="divider-line"></div>
+                <div class="divider-ornament"></div>
+                <div class="divider-line"></div>
+            </div>
             
             <div class="main-stats">
-                <div class="stat-row">
+                <div class="stat-card">
                     <div class="stat-left">
                         <img src="{{ good_icon }}" class="stat-icon" alt="Good">
                         <span class="stat-label">Good Wins</span>
                     </div>
-                    <span class="stat-value">{{ good_wins }}<span class="stat-sub">{{ good_rate }}%</span></span>
+                    <div class="stat-right">
+                        <span class="stat-value">{{ good_wins }}</span>
+                        <span class="stat-sub">{{ good_rate }}%</span>
+                    </div>
                 </div>
-                <div class="stat-row">
+                <div class="stat-card">
                     <div class="stat-left">
                         <img src="{{ evil_icon }}" class="stat-icon" alt="Evil">
                         <span class="stat-label">Evil Wins</span>
                     </div>
-                    <span class="stat-value">{{ evil_wins }}<span class="stat-sub">{{ evil_rate }}%</span></span>
-                </div>
-                <div class="stat-row">
-                    <div class="stat-left">
-                        <span class="stat-label">Balance</span>
+                    <div class="stat-right">
+                        <span class="stat-value">{{ evil_wins }}</span>
+                        <span class="stat-sub">{{ evil_rate }}%</span>
                     </div>
-                    <span class="stat-value">{{ balance }}</span>
                 </div>
             </div>
             
-            <div class="divider"></div>
+            <div class="balance-section">
+                <div class="balance-label">Balance</div>
+                <div class="balance-value">{{ balance }}</div>
+            </div>
             
             <div class="extra-stats">
                 <div class="extra-stats-row">
@@ -352,31 +635,12 @@
                     </div>
                     {% endif %}
                 </div>
-                <div class="extra-item">
-                    <div class="extra-label">Total</div>
-                    <div class="extra-value">{{ total_games }}</div>
+                <div class="total-section">
+                    <div class="extra-item">
+                        <div class="extra-label">Total Games</div>
+                        <div class="extra-value">{{ total_games }}</div>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="script-stats">
-                {% if tb_games > 0 %}
-                <div class="script-item">
-                    <span class="script-icon">🍺</span>
-                    <span class="script-count">{{ tb_games }}</span>
-                </div>
-                {% endif %}
-                {% if snv_games > 0 %}
-                <div class="script-item">
-                    <span class="script-icon">🪻</span>
-                    <span class="script-count">{{ snv_games }}</span>
-                </div>
-                {% endif %}
-                {% if bmr_games > 0 %}
-                <div class="script-item">
-                    <span class="script-icon">🌙</span>
-                    <span class="script-count">{{ bmr_games }}</span>
-                </div>
-                {% endif %}
             </div>
             
             <div class="footer">Grimkeeper v{{ version }}</div>
