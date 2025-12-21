@@ -1054,6 +1054,8 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
             if not stats:
                 await interaction.response.send_message(f"{user.display_name} has no storytelling history.", ephemeral=True)
                 return
+            # Defer early since card generation takes time
+            await interaction.response.defer()
         
         # If showing individual stats, make it more detailed
         if user and len(stats) == 1:
@@ -1215,15 +1217,15 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
                 if card_buffer:
                     # Send only the card image
                     card_file = discord.File(fp=card_buffer, filename=f"stats_{user.id}.png")
-                    await interaction.response.send_message(file=card_file)
+                    await interaction.followup.send(file=card_file)
                 else:
                     # Fallback to embed only if card generation fails
-                    await interaction.response.send_message(embed=embed)
+                    await interaction.followup.send(embed=embed)
                     
             except Exception as e:
                 logger.warning(f"Failed to generate stats card: {e}")
                 # Fallback to embed only
-                await interaction.response.send_message(embed=embed)
+                await interaction.followup.send(embed=embed)
         
         else:
             # Show all storytellers (leaderboard style)
