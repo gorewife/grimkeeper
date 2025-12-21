@@ -324,13 +324,33 @@ def get_player_role(member: discord.Member) -> tuple[str, bool]:
     return player_name, is_player
 
 
-def is_admin(member: Optional[discord.Member]) -> bool:
-    """Check if a member has administrator permissions.
+async def is_admin(member: Optional[discord.Member], db=None) -> bool:
+    """Check if a member has administrator permissions or an admin role.
     
     Args:
         member: Discord member to check
+        db: Database instance (optional, will check role-based permissions if provided)
         
     Returns:
-        True if member has administrator permissions, False otherwise
+        True if member has administrator permissions or an admin role, False otherwise
     """
-    return member is not None and member.guild_permissions.administrator
+    if member is None:
+        return False
+    
+    # Check for Discord administrator permission
+    if member.guild_permissions.administrator:
+        return True
+    
+    # Check for custom admin roles from database
+    if db is not None:
+        try:
+            admin_role_ids = await db.get_admin_roles(member.guild.id)
+            member_role_ids = [role.id for role in member.roles]
+            # Check if any of the member's roles are in the admin roles list
+            if any(role_id in admin_role_ids for role_id in member_role_ids):
+                return True
+        except Exception:
+            # If database check fails, fall back to permission-only check
+            pass
+    
+    return False

@@ -46,14 +46,56 @@ The remainder of this document describes the same high-level systems (nickname p
 
 ## Core Systems
 
-### 0. The Session-scoped (per-category) system
+### 0. Admin Role System
+
+**Purpose:** Allow server administrators to designate custom roles that have admin permissions for bot commands, in addition to Discord's built-in Administrator permission.
+
+**Commands:**
+- `/setadmin <role> [action:add]` - Add a role as an admin role (admin only)
+- `/setadmin <role> action:remove` - Remove a role from admin roles (admin only)
+
+**How It Works:**
+- Admin roles are stored per-guild in the database (`admin_roles` table)
+- All admin-restricted commands check both:
+  1. Discord's `administrator` permission
+  2. Custom admin roles configured via `/setadmin`
+- Any user with either Discord admin OR a custom admin role can use admin commands
+
+**Admin-Restricted Commands:**
+- `/setbotc` - Configure BOTC category
+- `/settown` - Set town square channel
+- `/setexception` - Set private ST channel
+- `/autosetup` - Auto-create server structure
+- `/sessions` - List active sessions
+- `/deletesession` - Remove a session
+- `/deletegame` - Delete specific game from history
+- `/clearhistory` - Clear all game history
+- `/setadmin` - Manage admin roles (requires existing admin status)
+
+**Use Cases:**
+- Designate moderator roles as bot admins without giving full Discord admin
+- Create dedicated "BOTC Admin" role for bot management
+- Separate bot permissions from server-wide admin permissions
+- Multiple admin roles per server supported
+
+**Database Schema:**
+```sql
+CREATE TABLE admin_roles (
+    guild_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (guild_id, role_id)
+);
+```
+
+### 1. The Session-scoped (per-category) system
 
 When you use `/autosetup` or `/setbotc` and choose a category, that category becomes a "session" or a "botc cateogry".
 This enables much of the bot's functionality and many of the core features require you to have one set up.
 Among these is that it saves such category's voice channel caps to use as a reference for the dynamic vc cap changes
 I'll go in depth into what these are more in this document
 
-### 1. Nickname Prefix System
+### 2. Nickname Prefix System
 
 The bot uses nickname prefixes to track user roles and states:
 
@@ -74,7 +116,7 @@ The bot uses nickname prefixes to track user roles and states:
 - Claiming Storyteller also clears the grimoire link for that category
 - Unclaiming Storyteller keeps the grimoire link
 
-### 2. Voice Channel Cap Management
+### 3. Voice Channel Cap Management
 
 **Problem Solved:** When Storytellers/Co-Storytellers/Spectators join a voice channel that's at capacity, normal users can't join.
 
@@ -101,7 +143,7 @@ The bot uses nickname prefixes to track user roles and states:
 - If you add or change voice channels, run /setbotc <category> again to update the snapshot
 - No backup dict or incremental tracking—cap is always recalculated from the snapshot plus current privileged users
 
-### 3. Shadow Follow System
+### 4. Shadow Follow System
 
 **Purpose:** Allow spectators to automatically follow players between voice channels.
 
@@ -132,7 +174,7 @@ The bot uses nickname prefixes to track user roles and states:
 - When you `*spec` someone, if both of you are in voice channels, you're immediately moved to their channel
 - No need to wait for them to switch channels first
 
-### 4. Timer System
+### 5. Timer System
 
 **Purpose:** Schedule delayed "call to town square" with flexible duration input.
 
@@ -195,7 +237,7 @@ Supported formats:
 - If bot lacks Move Members permission: Error message
 - All errors auto-delete after 5 seconds
 
-### 5. Town Square System
+### 6. Town Square System
 
 **Purpose:** Move all players from various voice channels in the BOTC category to a single "Town Square" channel.
 
@@ -235,7 +277,7 @@ Note: Storytellers, Co-Storytellers, and Spectators are still subject to moves u
 - Checked before attempting any moves
 - Clear error message if missing
 
-### 6. Player List System
+### 7. Player List System
 
 **Purpose:** Show active players and track who joined/left since last check.
 
@@ -276,7 +318,7 @@ left = last - current
 - BOTC category must be configured first
 - Returns error if category not set or not found
 
-### 7. Grimoire Link System
+### 8. Grimoire Link System
 
 **Purpose:** Store and share grimoire links (typically clocktower.live links).
 
@@ -311,7 +353,7 @@ When viewed:
 📜 Current grimoire link: <link>
 ```
 
-### 8. Rate Limiting
+### 9. Rate Limiting
 
 **Purpose:** Prevent command spam from overwhelming the bot or Discord API.
 
@@ -338,7 +380,7 @@ def check_rate_limit(user_id, command):
 - Fast typers or accidental double-sends are ignored
 - No spam in chat from error messages
 
-### 9. Wiki Integration & Character Lookup
+### 10. Wiki Integration & Character Lookup
 
 **Purpose:** Provide instant access to official BOTC character information from the wiki.
 
@@ -378,7 +420,7 @@ def check_rate_limit(user_id, command):
 - Supports up to 5000 characters per section
 - Per-command tracking (running `*help` doesn't block `*players`)
 
-### 9. Game Statistics Tracking
+### 11. Game Statistics Tracking
 
 **Purpose:** Track game sessions and maintain server-level statistics.
 
@@ -435,22 +477,21 @@ def check_rate_limit(user_id, command):
 
 **Storyteller Statistics:**
 - Per-storyteller game counts and win rates
-- Leaderboard shows guild-specific stats (top 10 storytellers on current server)
-- Individual user stats (`/ststats @user`) display as custom-generated stat cards (800x600px images)
-- Cards include: avatar, pronouns, favorite script, playing style, bio, games played, win rate, good/evil wins
-- Overall Good/Evil win rates for each storyteller
-- Script-specific stats with emojis: 🍺 Trouble Brewing, 🪻 Sects & Violets, 🌙 Bad Moon Rising
-- Access with `/ststats` (leaderboard) or `/ststats @user` (individual card)
-- Legacy `/storytellerstats` command still works as alias
-- Automatically tracks storyteller_id on game start
-- Updates statistics on game completion
+- Guild leaderboard (top 10)
+- Individual stat cards (400x750px tarot layout)
+- Dark aesthetic with gold accents
+- Includes: avatar, pronouns, custom title, games, win rates, balance
+- Additional stats: avg duration, avg players, script breakdown (TB/SNV/BMR)
+- HTML/CSS rendering via Playwright
+- `/ststats` or legacy `/storytellerstats`
+- Auto-tracks on game start/end
 
 **Storyteller Profiles:**
-- Customize your stat card with `/stprofile`
-- Optional fields: pronouns (≤15 chars), favorite_script (≤50 chars), style (≤50 chars)
-- Profile data displays on your `/ststats` card
-- Clear individual fields with `/stprofile` by selecting field and leaving value empty
-- Profiles are **bot-wide** (same across all servers, matches bot-wide stats)
+- Customize with `/stprofile`
+- Fields: `pronouns` (≤15 chars), `custom_title` (≤15 chars)
+- Displays on stat cards
+- Clear fields by leaving value empty
+- Bot-wide (not per-server)
 
 **Game History Display:**
 - Most recent N games (configurable, default 10)
@@ -464,7 +505,7 @@ def check_rate_limit(user_id, command):
 - `storyteller_stats` table: Per-storyteller statistics and win rates
 - Thread-safe database operations with connection pooling
 
-### 10. Script Polling (Enhanced)
+### 12. Script Polling (Enhanced)
 
 **Purpose:** Create timed polls for players to vote on which script to play.
 
@@ -503,6 +544,46 @@ def check_rate_limit(user_id, command):
 - `botc/polls.py`: `create_poll_internal()` and `_end_poll()` functions
 - `botc/cogs/polls.py`: Message command handler
 - `botc/cogs/slash.py`: Slash command handler
+
+### 13. Localization System
+
+**Purpose:** Support multiple languages for bot messages and commands.
+
+**Supported Languages:**
+- 🇬🇧 English (en) - Default
+- 🇪🇸 Spanish (es) - Complete (451 strings)
+- 🇷🇺 Russian (ru) - Complete (451 strings)
+- 🇵🇱 Polish (pl) - Partial
+
+**Command:**
+- `/language <language>` - Set server language preference
+
+**How It Works:**
+- Translation files stored in `locales/` directory as JSON
+- Each file contains key-value pairs for all bot messages
+- Bot loads all available languages on startup
+- Server language preference stored in database (`guilds` table)
+- Fallback to English if translation missing
+
+**Translation File Structure:**
+```json
+{
+    "command.help.title": "Grimkeeper Commands",
+    "command.st.claimed": "You are now the Storyteller!",
+    "error.no_permission": "You don't have permission to use this command."
+}
+```
+
+**Adding New Languages:**
+1. Copy `locales/en.json` to `locales/<lang_code>.json`
+2. Translate all values (keep keys unchanged)
+3. Test with `/language <lang_code>`
+4. Submit PR with new translation
+
+**Implementation:**
+- `botc/i18n.py`: Translation loading and lookup functions
+- Database column: `guilds.language` (VARCHAR(5))
+- All user-facing messages use translation keys
 
 ### 11. Auto-Setup System
 
@@ -1273,5 +1354,5 @@ A: Yes! The bot uses PostgreSQL, so just provision a database addon (Heroku Post
 - **Code Review:** Pull requests welcome
 - **Documentation:** Available in `/docs` directory
 
-**Version:** 1.3.1  
-**Last Updated:** November 30, 2025
+**Version:** 1.8.0  
+**Last Updated:** December 21, 2025

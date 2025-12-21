@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @import url('https://fonts.cdnfonts.com/css/hustleactlife');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            background: #000000;
+            width: 400px;
+            height: 750px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .card {
+            background: #000000;
+            border: 3px solid #c9a875;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .border-inner {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 1px solid #8b7355;
+        }
+        
+        .border-corner {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border: 1px solid #c9a875;
+        }
+        
+        .corner-tl { top: 18px; left: 18px; border-right: none; border-bottom: none; }
+        .corner-tr { top: 18px; right: 18px; border-left: none; border-bottom: none; }
+        .corner-bl { bottom: 18px; left: 18px; border-right: none; border-top: none; }
+        .corner-br { bottom: 18px; right: 18px; border-left: none; border-top: none; }
+        
+        .content {
+            position: relative;
+            padding: 28px 24px 20px 24px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            z-index: 1;
+        }
+        
+        .header {
+            margin-bottom: 12px;
+        }
+        
+        .title {
+            font-family: 'Helvetica', sans-serif;
+            font-size: 11px;
+            font-weight: 400;
+            color: #c9a875;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            border-top: 1px solid #8b7355;
+            border-bottom: 1px solid #8b7355;
+            padding: 8px 0;
+        }
+        
+        .avatar-section {
+            margin-bottom: 12px;
+        }
+        
+        .avatar {
+            width: 140px;
+            height: 140px;
+            object-fit: cover;
+            border: 3px solid #c9a875;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+        
+        .username {
+            font-family: 'HustleActLife', serif;
+            font-size: 30px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+        
+        .pronouns {
+            font-size: 16px;
+            color: #888888;
+            font-style: italic;
+            margin-bottom: 0;
+        }
+        
+        .tags {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .tag {
+            font-size: 9px;
+            color: #888888;
+            padding: 3px 8px;
+            border: 1px solid #444444;
+            letter-spacing: 1px;
+        }
+        
+        .divider {
+            width: 50%;
+            height: 1px;
+            background: #8b7355;
+            margin: 14px 0;
+        }
+        
+        .main-stats {
+            margin-bottom: 14px;
+            width: 100%;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 16px;
+            border-bottom: 1px solid #222222;
+        }
+        
+        .stat-row:last-child {
+            border-bottom: none;
+        }
+        
+        .stat-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+        
+        .stat-label {
+            font-family: 'Helvetica', sans-serif;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #c9a875;
+        }
+        
+        .stat-value {
+            font-family: 'HustleActLife', serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        .stat-sub {
+            font-size: 14px;
+            color: #666666;
+            margin-left: 6px;
+        }
+        
+        .extra-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            margin-top: 14px;
+        }
+        
+        .extra-stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 16px;
+        }
+        
+        .script-stats {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid #222222;
+        }
+        
+        .script-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .script-icon {
+            font-size: 22px;
+        }
+        
+        .script-count {
+            font-family: 'HustleActLife', serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        
+        .extra-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .extra-label {
+            font-family: 'Helvetica', sans-serif;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #c9a875;
+        }
+        
+        .extra-value {
+            font-family: 'HustleActLife', serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            font-family: 'Helvetica', sans-serif;
+            font-size: 14px;
+            color: #444444;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .sparkle {
+            position: absolute;
+            opacity: 0.3;
+            mix-blend-mode: screen;
+            z-index: 0;
+        }
+        
+        .sparkle-1 { top: 45px; left: 22px; width: 60px; height: 60px; }
+        .sparkle-2 { top: 135px; right: 38px; width: 40px; height: 40px; }
+        .sparkle-3 { top: 215px; left: 30px; width: 70px; height: 70px; }
+        .sparkle-4 { top: 298px; right: 25px; width: 50px; height: 50px; }
+        .sparkle-5 { top: 385px; left: 42px; width: 55px; height: 55px; }
+        .sparkle-6 { top: 465px; right: 35px; width: 45px; height: 45px; }
+        .sparkle-7 { top: 543px; left: 28px; width: 65px; height: 65px; }
+        .sparkle-8 { top: 618px; right: 30px; width: 50px; height: 50px; }
+        .sparkle-9 { top: 175px; right: 50px; width: 35px; height: 35px; }
+        .sparkle-10 { top: 425px; left: 20px; width: 40px; height: 40px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="border-inner"></div>
+        <div class="border-corner corner-tl"></div>
+        <div class="border-corner corner-tr"></div>
+        <div class="border-corner corner-bl"></div>
+        <div class="border-corner corner-br"></div>
+        
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-1" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-2" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-3" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-4" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-5" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-6" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-7" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-8" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-9" alt="">
+        <img src="{{ sparkle_icon }}" class="sparkle sparkle-10" alt="">
+        
+        <div class="content">
+            <div class="header">
+                <div class="title">The {{ custom_title }}</div>
+            </div>
+            
+            <div class="avatar-section">
+                <img src="{{ avatar_url }}" alt="Avatar" class="avatar">
+                <div class="username">{{ username }}</div>
+                {% if pronouns %}
+                <div class="pronouns">{{ pronouns }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="main-stats">
+                <div class="stat-row">
+                    <div class="stat-left">
+                        <img src="{{ good_icon }}" class="stat-icon" alt="Good">
+                        <span class="stat-label">Good Wins</span>
+                    </div>
+                    <span class="stat-value">{{ good_wins }}<span class="stat-sub">{{ good_rate }}%</span></span>
+                </div>
+                <div class="stat-row">
+                    <div class="stat-left">
+                        <img src="{{ evil_icon }}" class="stat-icon" alt="Evil">
+                        <span class="stat-label">Evil Wins</span>
+                    </div>
+                    <span class="stat-value">{{ evil_wins }}<span class="stat-sub">{{ evil_rate }}%</span></span>
+                </div>
+                <div class="stat-row">
+                    <div class="stat-left">
+                        <span class="stat-label">Balance</span>
+                    </div>
+                    <span class="stat-value">{{ balance }}</span>
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="extra-stats">
+                <div class="extra-stats-row">
+                    {% if avg_duration %}
+                    <div class="extra-item">
+                        <div class="extra-label">Avg Duration</div>
+                        <div class="extra-value">
+                            {% if avg_duration >= 60 %}
+                                {{ (avg_duration / 60)|int }}h {{ (avg_duration % 60)|int }}m
+                            {% else %}
+                                {{ avg_duration|int }}m
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if avg_players %}
+                    <div class="extra-item">
+                        <div class="extra-label">Avg Players</div>
+                        <div class="extra-value">{{ "%.1f"|format(avg_players) }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="extra-item">
+                    <div class="extra-label">Total</div>
+                    <div class="extra-value">{{ total_games }}</div>
+                </div>
+            </div>
+            
+            <div class="script-stats">
+                {% if tb_games > 0 %}
+                <div class="script-item">
+                    <span class="script-icon">🍺</span>
+                    <span class="script-count">{{ tb_games }}</span>
+                </div>
+                {% endif %}
+                {% if snv_games > 0 %}
+                <div class="script-item">
+                    <span class="script-icon">🪻</span>
+                    <span class="script-count">{{ snv_games }}</span>
+                </div>
+                {% endif %}
+                {% if bmr_games > 0 %}
+                <div class="script-item">
+                    <span class="script-icon">🌙</span>
+                    <span class="script-count">{{ bmr_games }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="footer">Grimkeeper v{{ version }}</div>
+        </div>
+    </div>
+</body>
+</html>

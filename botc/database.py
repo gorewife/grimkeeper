@@ -88,7 +88,9 @@ class Database:
                 )
                 
                 if schema_exists:
-                    logger.info("Database schema already exists, skipping initialization")
+                    logger.info("Database schema already exists, running additional migrations")
+                    # Run additional migrations
+                    await self._run_migrations(migrations_dir, conn)
                     return
         except Exception as e:
             logger.warning(f"Error checking schema existence: {e}")
@@ -106,9 +108,47 @@ class Database:
                 
                 await conn.execute(schema_sql)
                 logger.info("Database schema initialized successfully")
+                
+                # Run additional migrations
+                await self._run_migrations(migrations_dir, conn)
         except Exception as e:
             logger.error(f"Schema initialization failed: {e}")
             # Don't raise - allow bot to continue
+    
+    async def _run_migrations(self, migrations_dir: Path, conn) -> None:
+        """Run numbered migration files that haven't been applied yet."""
+        # Get list of migration files (002+, since 001 is the base schema)
+        migration_files = sorted([
+            f for f in migrations_dir.glob("*.sql")
+            if f.name.startswith(("002_", "003_", "004_", "005_", "006_", "007_", "008_", "009_"))
+        ])
+        
+        for migration_file in migration_files:
+            try:
+                # Check if this migration's table already exists
+                # For 003_add_admin_roles.sql, check if admin_roles table exists
+                table_name = None
+                if "admin_roles" in migration_file.name:
+                    table_name = "admin_roles"
+                
+                if table_name:
+                    table_exists = await conn.fetchval(
+                        "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = $1)",
+                        table_name
+                    )
+                    if table_exists:
+                        logger.debug(f"Migration {migration_file.name} already applied, skipping")
+                        continue
+                
+                # Run the migration
+                with open(migration_file, 'r') as f:
+                    migration_sql = f.read()
+                
+                await conn.execute(migration_sql)
+                logger.info(f"Applied migration: {migration_file.name}")
+            except Exception as e:
+                logger.error(f"Failed to apply migration {migration_file.name}: {e}")
+                # Continue with other migrations
     
     # Guild operations
     async def get_guild(self, guild_id: int) -> Optional[Dict[str, Any]]:
@@ -1013,7 +1053,7 @@ class Database:
         """
         async with self.pool.acquire() as conn:
             row = await conn.fetchrow(
-                """SELECT pronouns, favorite_script, style, created_at, updated_at
+                """SELECT pronouns, custom_title, created_at, updated_at
                    FROM storyteller_profiles
                    WHERE user_id = $1""",
                 user_id
@@ -1024,31 +1064,28 @@ class Database:
         self,
         user_id: int,
         pronouns: Optional[str] = None,
-        favorite_script: Optional[str] = None,
-        style: Optional[str] = None
+        custom_title: Optional[str] = None
     ) -> bool:
         """Create or update storyteller profile (bot-wide).
         
         Args:
             user_id: Discord user ID
             pronouns: User pronouns
-            favorite_script: Favorite BOTC script
-            style: Storytelling style description
+            custom_title: Custom title for card (e.g., "Gamer", "Farmer")
             
         Returns:
             True if successful
         """
         async with self.pool.acquire() as conn:
             await conn.execute(
-                """INSERT INTO storyteller_profiles (user_id, pronouns, favorite_script, style, updated_at)
-                   VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+                """INSERT INTO storyteller_profiles (user_id, pronouns, custom_title, updated_at)
+                   VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
                    ON CONFLICT (user_id)
                    DO UPDATE SET
                        pronouns = COALESCE($2, storyteller_profiles.pronouns),
-                       favorite_script = COALESCE($3, storyteller_profiles.favorite_script),
-                       style = COALESCE($4, storyteller_profiles.style),
+                       custom_title = COALESCE($3, storyteller_profiles.custom_title),
                        updated_at = CURRENT_TIMESTAMP""",
-                user_id, pronouns, favorite_script, style
+                user_id, pronouns, custom_title
             )
             return True
 
@@ -1057,12 +1094,12 @@ class Database:
         
         Args:
             user_id: Discord user ID
-            field: Field name to clear (pronouns, favorite_script, or style)
+            field: Field name to clear (pronouns or custom_title)
             
         Returns:
             True if successful
         """
-        if field not in ['pronouns', 'favorite_script', 'style']:
+        if field not in ['pronouns', 'custom_title']:
             return False
         
         async with self.pool.acquire() as conn:
@@ -1104,6 +1141,87 @@ class Database:
                 guild_id
             )
             return row['language'] if row else 'en'
+
+    # Admin roles management
+    async def get_admin_roles(self, guild_id: int) -> List[int]:
+        """Get all admin role IDs for a guild.
+        
+        Args:
+            guild_id: Discord guild ID
+        
+        Returns:
+            List of role IDs that have admin privileges
+        """
+        async with self.pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT role_id FROM admin_roles WHERE guild_id = $1",
+                guild_id
+            )
+            return [row['role_id'] for row in rows]
+    
+    async def add_admin_role(self, guild_id: int, role_id: int) -> bool:
+        """Add a role as an admin role for a guild.
+        
+        Args:
+            guild_id: Discord guild ID
+            role_id: Discord role ID to add as admin
+        
+        Returns:
+            True if role was added, False if it already existed
+        """
+        async with self.pool.acquire() as conn:
+            try:
+                await conn.execute(
+                    """INSERT INTO admin_roles (guild_id, role_id)
+                       VALUES ($1, $2)
+                       ON CONFLICT (guild_id, role_id) DO NOTHING""",
+                    guild_id, role_id
+                )
+                # Check if the insert actually happened
+                result = await conn.fetchval(
+                    "SELECT COUNT(*) FROM admin_roles WHERE guild_id = $1 AND role_id = $2",
+                    guild_id, role_id
+                )
+                return result > 0
+            except Exception as e:
+                logger.error(f"Error adding admin role {role_id} for guild {guild_id}: {e}")
+                return False
+    
+    async def remove_admin_role(self, guild_id: int, role_id: int) -> bool:
+        """Remove an admin role from a guild.
+        
+        Args:
+            guild_id: Discord guild ID
+            role_id: Discord role ID to remove from admin list
+        
+        Returns:
+            True if role was removed, False if it didn't exist
+        """
+        async with self.pool.acquire() as conn:
+            result = await conn.execute(
+                "DELETE FROM admin_roles WHERE guild_id = $1 AND role_id = $2",
+                guild_id, role_id
+            )
+            # Check if any rows were deleted
+            return result.split()[-1] != '0'
+    
+    async def is_admin_role(self, guild_id: int, role_id: int) -> bool:
+        """Check if a role is an admin role for a guild.
+        
+        Args:
+            guild_id: Discord guild ID
+            role_id: Discord role ID to check
+        
+        Returns:
+            True if the role is an admin role, False otherwise
+        """
+        async with self.pool.acquire() as conn:
+            result = await conn.fetchval(
+                "SELECT COUNT(*) FROM admin_roles WHERE guild_id = $1 AND role_id = $2",
+                guild_id, role_id
+            )
+            return result > 0
+
 
 
 # Global database instance
