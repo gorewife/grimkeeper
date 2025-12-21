@@ -658,7 +658,7 @@ class SlashCog(commands.Cog):
             member = interaction.user
             
             # Admin check
-            if not self.bot.is_admin(member):
+            if not await self.bot.is_admin(member):
                 await interaction.response.send_message(
                     "❌ Only server administrators can use `/forceendgame`.\n"
                     "If you're the storyteller, use `/endgame` instead.",
@@ -732,23 +732,21 @@ class SlashCog(commands.Cog):
         @app_commands.command(name="stprofile", description="Set your storyteller profile for stat cards")
         @app_commands.describe(
             pronouns="Your pronouns (e.g., she/her, he/him, they/them)",
-            favorite_script="Your favorite BOTC script",
-            style="Your storytelling style"
+            custom_title="Your custom title (e.g., Gamer, Farmer, Wizard) - max 15 chars"
         )
         async def stprofile_slash(
             interaction: discord.Interaction,
             pronouns: str = None,
-            favorite_script: str = None,
-            style: str = None
+            custom_title: str = None
         ):
             """Set storyteller profile fields."""
             db: Database = self.bot.db
             
             # Validate at least one field provided
-            if not any([pronouns, favorite_script, style]):
+            if not any([pronouns, custom_title]):
                 await interaction.response.send_message(
                     "❌ Please provide at least one field to update.\n"
-                    "**Available fields:** `pronouns`, `favorite_script`, `style`",
+                    "**Available fields:** `pronouns`, `custom_title`",
                     ephemeral=True
                 )
                 return
@@ -757,11 +755,8 @@ class SlashCog(commands.Cog):
             if pronouns and len(pronouns) > 15:
                 await interaction.response.send_message("❌ Pronouns must be 15 characters or less.", ephemeral=True)
                 return
-            if favorite_script and len(favorite_script) > 50:
-                await interaction.response.send_message("❌ Favorite script must be 50 characters or less.", ephemeral=True)
-                return
-            if style and len(style) > 50:
-                await interaction.response.send_message("❌ Style must be 50 characters or less.", ephemeral=True)
+            if custom_title and len(custom_title) > 15:
+                await interaction.response.send_message("❌ Custom title must be 15 characters or less.", ephemeral=True)
                 return
             
             try:
@@ -769,8 +764,7 @@ class SlashCog(commands.Cog):
                 success = await db.set_storyteller_profile(
                     interaction.user.id,
                     pronouns,
-                    favorite_script,
-                    style
+                    custom_title
                 )
                 
                 if success:
@@ -778,10 +772,8 @@ class SlashCog(commands.Cog):
                     updates = []
                     if pronouns:
                         updates.append(f"**Pronouns:** {pronouns}")
-                    if favorite_script:
-                        updates.append(f"**Favorite Script:** {favorite_script}")
-                    if style:
-                        updates.append(f"**Style:** {style}")
+                    if custom_title:
+                        updates.append(f"**Title:** The {custom_title}")
                     
                     embed = discord.Embed(
                         title="✅ Profile Updated",
@@ -1010,7 +1002,7 @@ class SlashCog(commands.Cog):
         @app_commands.describe(channel="The voice channel to use as Town Square")
         async def settown_slash(interaction: discord.Interaction, channel: discord.VoiceChannel):
             """Set the Town Square voice channel for this session."""
-            if not self.bot.is_admin(interaction.user):
+            if not await self.bot.is_admin(interaction.user):
                 await interaction.response.send_message("❌ Only administrators can set the Town Square.", ephemeral=True)
                 return
             
@@ -1038,7 +1030,7 @@ class SlashCog(commands.Cog):
         @app_commands.describe(category="The category name or ID")
         async def setbotc_slash(interaction: discord.Interaction, category: str):
             """Set the BOTC category for the server."""
-            if not self.bot.is_admin(interaction.user):
+            if not await self.bot.is_admin(interaction.user):
                 await interaction.response.send_message("❌ Only administrators can set the BOTC category.", ephemeral=True)
                 return
             
@@ -1100,7 +1092,7 @@ class SlashCog(commands.Cog):
         @app_commands.describe(channel="The voice channel for private ST discussions (optional)")
         async def setexception_slash(interaction: discord.Interaction, channel: discord.VoiceChannel = None):
             """Set or clear the exception channel for this session."""
-            if not self.bot.is_admin(interaction.user):
+            if not await self.bot.is_admin(interaction.user):
                 await interaction.response.send_message("❌ Only administrators can set the exception channel.", ephemeral=True)
                 return
             
@@ -1134,7 +1126,7 @@ class SlashCog(commands.Cog):
         @app_commands.command(name="sessions", description="[Admin] List all BOTC sessions in this server")
         async def sessions_slash(interaction: discord.Interaction):
             """List all game sessions in the server."""
-            if not self.bot.is_admin(interaction.user):
+            if not await self.bot.is_admin(interaction.user):
                 await interaction.response.send_message("❌ Only administrators can view sessions.", ephemeral=True)
                 return
             
@@ -1214,14 +1206,18 @@ class SlashCog(commands.Cog):
         # /deletesession
         @app_commands.command(name="deletesession", description="Delete a BOTC session (Admins only)")
         @app_commands.describe(category_id="The category ID of the session to delete (from /sessions)")
-        async def deletesession_slash(interaction: discord.Interaction, category_id: int):
+        async def deletesession_slash(interaction: discord.Interaction, category_id: str):
             """Delete a BOTC session configuration."""
             # Admin check
-            if not interaction.user.guild_permissions.administrator:
+            if not await self.bot.is_admin(interaction.user):
                 await interaction.response.send_message("Only administrators can delete sessions.", ephemeral=True)
                 return
 
-            cat_id = category_id  # Already an int
+            # Convert string to int (Discord IDs exceed JavaScript's safe integer limit)
+            if not category_id.isdigit():
+                await interaction.response.send_message("❌ Invalid category ID. Please provide a numeric ID.", ephemeral=True)
+                return
+            cat_id = int(category_id)
             guild_id = interaction.guild.id
             session_manager = getattr(self.bot, "session_manager", None)
             if not session_manager:
@@ -1263,7 +1259,7 @@ class SlashCog(commands.Cog):
         async def language_slash(interaction: discord.Interaction, language: str):
             """Set the bot's language for this server."""
             # Admin check
-            if not interaction.user.guild_permissions.administrator:
+            if not await self.bot.is_admin(interaction.user):
                 await interaction.response.send_message("Only administrators can change the bot's language.", ephemeral=True)
                 return
             
@@ -1293,6 +1289,73 @@ class SlashCog(commands.Cog):
                 logger.error(f"Failed to set language: {e}")
                 await interaction.response.send_message("❌ Failed to change language. Check logs.", ephemeral=True)
 
+        # /setadmin
+        @app_commands.command(name="setadmin", description="Set a role as an admin role for bot commands (Owner only)")
+        @app_commands.describe(
+            role="The role to grant admin privileges",
+            action="Add or remove the role from admin list"
+        )
+        @app_commands.choices(action=[
+            app_commands.Choice(name="Add role as admin", value="add"),
+            app_commands.Choice(name="Remove role from admin", value="remove"),
+        ])
+        async def setadmin_slash(interaction: discord.Interaction, role: discord.Role, action: str):
+            """Set or remove a role as an admin role for bot commands."""
+            # Only server administrators can manage admin roles
+            if not interaction.user.guild_permissions.administrator:
+                await interaction.response.send_message(
+                    "❌ Only server administrators can manage admin roles.",
+                    ephemeral=True
+                )
+                return
+            
+            guild_id = interaction.guild.id
+            role_id = role.id
+            db: Database = self.bot.db
+            
+            try:
+                if action == "add":
+                    # Add the role as an admin role
+                    success = await db.add_admin_role(guild_id, role_id)
+                    if success:
+                        embed = discord.Embed(
+                            title="✅ Admin Role Added",
+                            description=f"Role {role.mention} now has admin privileges for bot commands.",
+                            color=discord.Color.green()
+                        )
+                        embed.add_field(
+                            name="ℹ️ Info",
+                            value="Members with this role can now use admin-only commands like `/setbotc`, `/deletesession`, etc.",
+                            inline=False
+                        )
+                        await interaction.response.send_message(embed=embed, ephemeral=False)
+                    else:
+                        await interaction.response.send_message(
+                            f"⚠️ Role {role.mention} is already an admin role.",
+                            ephemeral=True
+                        )
+                else:  # remove
+                    # Remove the role from admin roles
+                    success = await db.remove_admin_role(guild_id, role_id)
+                    if success:
+                        embed = discord.Embed(
+                            title="✅ Admin Role Removed",
+                            description=f"Role {role.mention} no longer has admin privileges for bot commands.",
+                            color=discord.Color.orange()
+                        )
+                        await interaction.response.send_message(embed=embed, ephemeral=False)
+                    else:
+                        await interaction.response.send_message(
+                            f"⚠️ Role {role.mention} was not an admin role.",
+                            ephemeral=True
+                        )
+            except Exception as e:
+                logger.error(f"Failed to manage admin role: {e}")
+                await interaction.response.send_message(
+                    "❌ Failed to update admin role. Check logs.",
+                    ephemeral=True
+                )
+
         # Add all created commands to the bot.tree
         for cmd in [
             poll_slash,
@@ -1314,7 +1377,8 @@ class SlashCog(commands.Cog):
             setexception_slash,
             sessions_slash,
             deletesession_slash,
-            # language_slash,  # TODO: Enable when translations are ready
+            language_slash,
+            setadmin_slash,
         ]:
             try:
                 self.bot.tree.add_command(cmd)

@@ -67,11 +67,4 @@ scripts/
 .vscode/
 tests/
 
-# Locales: only allow en.json and README.md
-locales/*
-!locales/en.json
-!locales/README.md
-
-# Ignore extract_strings.py in locales
-locales/extract_strings.py
 
