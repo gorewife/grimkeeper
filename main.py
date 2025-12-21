@@ -631,7 +631,8 @@ bot.timer_manager = timer_manager
 bot.session_manager = None  # Will be set in on_ready after DB initialization
 bot.db = db
 bot.check_rate_limit = check_rate_limit
-bot.is_admin = is_admin
+# is_admin is now async and needs to be called with await is_admin(member, bot.db)
+bot.is_admin = lambda member: is_admin(member, bot.db)
 bot.send_temporary = send_temporary
 bot.toggle_prefix = toggle_prefix
 bot.get_botc_category = get_botc_category
@@ -1086,10 +1087,8 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
                 profile_text = []
                 if profile.get('pronouns'):
                     profile_text.append(f"*({profile['pronouns']})*")
-                if profile.get('style'):
-                    profile_text.append(f"🎭 {profile['style']}")
-                if profile.get('favorite_script'):
-                    profile_text.append(f"⭐ {profile['favorite_script']}")
+                if profile.get('custom_title'):
+                    profile_text.append(f"🎭 The {profile['custom_title']}")
                 if profile_text:
                     embed.description += "\n" + " • ".join(profile_text)
             
@@ -1185,7 +1184,48 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
                 )
             
             embed.set_footer(text=f"Grimkeeper v{VERSION} • Use /ststats without user to see all")
-            await interaction.response.send_message(embed=embed)
+            
+            # Generate stats card
+            try:
+                from botc.card_generator import generate_stats_card
+                
+                # Calculate average duration and players
+                avg_duration_minutes = None
+                avg_players = None
+                if total > 0:
+                    if stat.get('total_game_duration', 0):
+                        avg_duration_minutes = (stat['total_game_duration'] / total) / 60
+                    if stat.get('total_player_count', 0):
+                        avg_players = stat['total_player_count'] / total
+                
+                card_buffer = await generate_stats_card(
+                    username=user.display_name,
+                    avatar_url=str(user.display_avatar.url),
+                    total_games=total,
+                    good_wins=good,
+                    evil_wins=evil,
+                    pronouns=profile.get('pronouns') if profile else None,
+                    version=VERSION,
+                    tb_games=stat.get('tb_games', 0) or 0,
+                    snv_games=stat.get('snv_games', 0) or 0,
+                    bmr_games=stat.get('bmr_games', 0) or 0,
+                    avg_duration_minutes=avg_duration_minutes,
+                    avg_players=avg_players,
+                    custom_title=profile.get('custom_title') if profile else None
+                )
+                
+                if card_buffer:
+                    # Attach card as file
+                    card_file = discord.File(fp=card_buffer, filename=f"stats_{user.id}.png")
+                    await interaction.response.send_message(embed=embed, file=card_file)
+                else:
+                    # Fallback to embed only if card generation fails
+                    await interaction.response.send_message(embed=embed)
+                    
+            except Exception as e:
+                logger.warning(f"Failed to generate stats card: {e}")
+                # Fallback to embed only
+                await interaction.response.send_message(embed=embed)
         
         else:
             # Show all storytellers (leaderboard style)
