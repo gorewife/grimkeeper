@@ -6,3 +6,5 @@ beautifulsoup4
 pydantic
 pydantic-settings
 Pillow
+playwright
+jinja2
