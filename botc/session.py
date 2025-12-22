@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 from typing import Optional, TYPE_CHECKING
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import discord
 
@@ -54,7 +54,7 @@ class Session:
     storyteller_user_id: Optional[int] = None
     created_at: Optional[float] = None
     last_active: Optional[float] = None
-    vc_caps: Optional[dict[int, int]] = None  # {channel_id: original_limit}
+    vc_caps: dict[int, int] = field(default_factory=dict)  # {channel_id: original_limit}
     
     @property
     def session_id(self) -> tuple[int, int]:

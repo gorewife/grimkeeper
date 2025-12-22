@@ -920,7 +920,7 @@ class Database:
                 session.guild_id, session.category_id, session.destination_channel_id,
                 session.grimoire_link, session.exception_channel_id, session.announce_channel_id,
                 session.active_game_id, session.storyteller_user_id, session.created_at, session.last_active,
-                json.dumps(session.vc_caps or {})
+                json.dumps(session.vc_caps)
             )
     
     async def get_session(self, guild_id: int, category_id: int):
@@ -945,11 +945,21 @@ class Database:
             if row:
                 data = dict(row)
                 # Parse vc_caps from JSON
-                if 'vc_caps' in data and data['vc_caps']:
-                    data['vc_caps'] = json.loads(data['vc_caps']) if isinstance(data['vc_caps'], str) else data['vc_caps']
-                    # Convert string keys to int keys
-                    if data['vc_caps']:
-                        data['vc_caps'] = {int(k): v for k, v in data['vc_caps'].items()}
+                if 'vc_caps' in data:
+                    if data['vc_caps'] is None:
+                        data['vc_caps'] = {}
+                    elif isinstance(data['vc_caps'], str):
+                        data['vc_caps'] = json.loads(data['vc_caps']) if data['vc_caps'] else {}
+                        # Convert string keys to int keys
+                        if data['vc_caps']:
+                            data['vc_caps'] = {int(k): v for k, v in data['vc_caps'].items()}
+                    elif isinstance(data['vc_caps'], dict):
+                        # asyncpg returns JSONB as dict, convert keys to int
+                        data['vc_caps'] = {int(k): v for k, v in data['vc_caps'].items()} if data['vc_caps'] else {}
+                    else:
+                        data['vc_caps'] = {}
+                else:
+                    data['vc_caps'] = {}
                 return Session(**data)
             return None
     
@@ -975,7 +985,7 @@ class Database:
                 session.guild_id, session.category_id, session.destination_channel_id,
                 session.grimoire_link, session.exception_channel_id, session.announce_channel_id,
                 session.active_game_id, session.storyteller_user_id, session.last_active,
-                json.dumps(session.vc_caps or {})
+                json.dumps(session.vc_caps)
             )
     
     async def delete_session(self, guild_id: int, category_id: int) -> None:
@@ -1013,11 +1023,21 @@ class Database:
             for row in rows:
                 data = dict(row)
                 # Parse vc_caps from JSON
-                if 'vc_caps' in data and data['vc_caps']:
-                    data['vc_caps'] = json.loads(data['vc_caps']) if isinstance(data['vc_caps'], str) else data['vc_caps']
-                    # Convert string keys to int keys
-                    if data['vc_caps']:
-                        data['vc_caps'] = {int(k): v for k, v in data['vc_caps'].items()}
+                if 'vc_caps' in data:
+                    if data['vc_caps'] is None:
+                        data['vc_caps'] = {}
+                    elif isinstance(data['vc_caps'], str):
+                        data['vc_caps'] = json.loads(data['vc_caps']) if data['vc_caps'] else {}
+                        # Convert string keys to int keys
+                        if data['vc_caps']:
+                            data['vc_caps'] = {int(k): v for k, v in data['vc_caps'].items()}
+                    elif isinstance(data['vc_caps'], dict):
+                        # asyncpg returns JSONB as dict, convert keys to int
+                        data['vc_caps'] = {int(k): v for k, v in data['vc_caps'].items()} if data['vc_caps'] else {}
+                    else:
+                        data['vc_caps'] = {}
+                else:
+                    data['vc_caps'] = {}
                 sessions.append(Session(**data))
             return sessions
     
