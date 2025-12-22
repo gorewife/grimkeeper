@@ -15,9 +15,9 @@
 
 ---
 
-A Discord bot for Blood on the Clocktower games. Manages voice channels, tracks spectators, handles timers, and keeps your grimoire links organized. Made by someone who got tired of manually moving people to Town Square.
+Discord bot for Blood on the Clocktower session management. Handles voice channels, spectator tracking, timers, and grimoire links.
 
-## What it does
+## Features
 
 **Session Management:**
 - Run multiple concurrent games in different categories on the same server
@@ -52,9 +52,9 @@ A Discord bot for Blood on the Clocktower games. Manages voice channels, tracks 
 
 ---
 
-## Quick Start
+## Setup
 
-### 1. Add the bot
+### 1. Invite the bot
 
 <a href="https://discord.com/oauth2/authorize?client_id=1424573592557064292&permissions=151021648&integration_type=0&scope=bot+applications.commands" target="_blank">
   <img src="https://img.shields.io/badge/Invite%20Grimkeeper%20Bot-5865F2?style=for-the-badge&logo=discord&logoColor=white&labelColor=222&color=5865F2" alt="Invite Grimkeeper"/>
@@ -70,30 +70,28 @@ Permissions needed:
 - Add Reactions
 - Read Message History
 
-### 2. Set it up
+### 2. Configure
 
-Run these (admin only):
+Admin only:
 
 ```
 /setbotc Blood on the Clocktower
 /settown #town-square
 ```
 
-**What `/setbotc` does:** Creates a session for that category - this is how the bot knows which categories are used for BOTC games.
+Creates a session for the specified category. Use `/autosetup` to auto-create server structure.
 
-Or just use `/autosetup` to create everything automatically.
+Multiple sessions per server are supported - run `/setbotc` on different categories.
 
-**💡 Pro Tip:** You can run `/setbotc` on multiple categories to create multiple BOTC sessions on the same server! Each session runs independently with its own channels, timers, and games.
+### 3. Usage
 
-### 3. You're good
-
-Type `*help` to see all commands.
+Type `*help` for command reference.
 
 ---
 
 ## Commands
 
-### 👥 Everyone
+**Everyone:**
 - `*!` - Toggle spectator mode
 - `*brb` - Toggle away status  
 - `*players` - List active players and see who joined/left
@@ -105,7 +103,7 @@ Type `*help` to see all commands.
 - `/stats` - View server game statistics
 - `/gamehistory` - View recent games
 
-### 📋 Storyteller Only
+**Storyteller:**
 - `*st` - Claim/unclaim Storyteller role
 - `*cost` - Toggle Co-Storyteller role
 - `*g <link>` - Set grimoire link (session-scoped)
@@ -123,14 +121,14 @@ Type `*help` to see all commands.
 - `/removeplayer @user` - Remove player from active game
 - `/storytellerstats [@user]` - View ST stats (user stats are bot-wide)
 
-### 👻 Spectator Only
+**Spectator:**
 - `*spec @user` - Shadow follow a player
 - `*unspec` - Stop following
 - `*shadows` - View all active followers
 - `*dnd` - Prevent being followed
 - `*join @user` - Join someone's voice channel (one-time)
 
-### ⚙️ Admin Only
+**Admin:**
 - `/setbotc <category>` - Configure BOTC category
 - `/settown #channel` - Set town square channel
 - `/setexception #channel` - Set private ST channel
@@ -144,7 +142,7 @@ Type `*help` to see all commands.
 ---
 ## Documentation
 
-- [📖 DOCUMENTATION.md](docs/DOCUMENTATION.md) - User guide and command reference
+- [User Guide](docs/USER_GUIDE.md) - Complete command reference
 
 ## Support
 

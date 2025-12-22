@@ -1,6 +1,6 @@
-# Only publish DOCUMENTATION.md from docs/
+# Only publish USER_GUIDE.md from docs/
 docs/*
-!docs/DOCUMENTATION.md
+!docs/USER_GUIDE.md
 assets/wiki_images/
 
 # Discord tokens, API keys, and secrets
@@ -39,6 +39,11 @@ __pycache__/
 venv/
 .pytest_cache/
 .ruff_cache/
+
+# Test coverage
+.coverage
+coverage.xml
+htmlcov/
 
 # System files
 .DS_Store
