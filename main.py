@@ -11,13 +11,8 @@ import discord
 from typing import Optional, List, Dict, Any
 from discord.ext import commands, tasks
 
-# Configuration
 from botc.config import get_settings
-
-# Discord utilities
 from botc.discord_utils import safe_send_interaction, safe_defer, safe_send_message
-
-# Bot utilities
 from botc.utils import (
     get_botc_category,
     get_exception_channel_ids,
@@ -29,8 +24,6 @@ from botc.utils import (
     get_member_name,
     get_player_role,
 )
-
-# Extracted constants and utilities
 from botc.constants import (
     EMOJI_PEN,
     VERSION,
@@ -85,61 +78,34 @@ from botc.utils import write_json_atomic, add_script_emoji
 from botc.timers import TimerManager
 from botc.database import Database
 from botc.session import SessionManager
-# from botc.card_generator import generate_stats_card  # TODO: Re-enable when cards are polished
 
-# Load environment variables
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(dotenv_path=BASE_DIR / ".env")
 
-# Load and validate configuration
 settings = get_settings()
 token = settings.discord_token
 database_url = settings.database_url
 
-# Logging
 logging.basicConfig(level=logging.INFO, filename='discord.log', encoding='utf-8', filemode='a')
 logger = logging.getLogger('botc_bot')
 
-# Intents
 intents = discord.Intents.default()
 intents.message_content = True
 intents.members = True
 
 bot = commands.Bot(command_prefix='*', intents=intents, help_command=None)
 
-# Database instance
 db = Database(database_url)
 
-# In-memory cache for frequently accessed data (loaded from DB on startup)
-# Note: Some data structures still used for performance, but persisted to DB
-follower_targets: dict[int, int] = {}   # follower_user_id -> target_user_id (rebuilt from DB on startup)
-last_player_snapshots: dict[tuple[int, Optional[int]], set[str]] = {}  # (guild_id, category_id) -> set of player IDs from last *players call
-
-# Rate limiting: user_id -> {command: last_used_timestamp}
+follower_targets: dict[int, int] = {}
+last_player_snapshots: dict[tuple[int, Optional[int]], set[str]] = {}
 command_cooldowns: dict[int, dict[str, float]] = {}
-
-# Track bot-initiated nickname changes to avoid false warnings
-# Stores tuples of (user_id, new_nickname) that were just changed by the bot
 bot_initiated_nick_changes: set[tuple[int, str]] = set()
 
-# Timer manager encapsulates scheduled timers and persistence
 timer_manager: Optional[TimerManager] = None
-
-# Session manager handles category-scoped game sessions
 session_manager: Optional[SessionManager] = None
 
 async def get_active_players(guild: discord.Guild, channel: discord.TextChannel = None) -> list:
-    """
-    Get list of active player mentions from BOTC category voice channels.
-    Excludes bots, storytellers, co-storytellers, and spectators.
-    
-    Args:
-        guild: Discord guild to check
-        channel: Channel to detect session context from
-        
-    Returns:
-        List of player mention strings, empty list if no session found
-    """
     active_player_mentions = []
     
     try:
@@ -166,17 +132,7 @@ async def get_active_players(guild: discord.Guild, channel: discord.TextChannel 
     
     return active_player_mentions
 
-# Helper to check if bot has required permissions
 def check_bot_permissions(guild: discord.Guild) -> tuple[bool, bool]:
-    """
-    Check if bot has required permissions in guild.
-    
-    Args:
-        guild: Discord guild to check
-        
-    Returns:
-        Tuple of (has_move_members: bool, has_manage_channels: bool)
-    """
     bot_member = guild.get_member(bot.user.id)
     if not bot_member:
         return (False, False)
@@ -186,32 +142,12 @@ def check_bot_permissions(guild: discord.Guild) -> tuple[bool, bool]:
 
 
 async def send_temporary(channel, content: str = None, embed: discord.Embed = None, delay: float = DELETE_DELAY_NORMAL) -> discord.Message:
-    """
-    Send a message and auto-delete it after a delay.
-    
-    Args:
-        channel: Discord channel to send to
-        content: Text content (optional)
-        embed: Embed object (optional)
-        delay: Seconds before deletion
-        
-    Returns:
-        The sent message object
-    """
     msg = await channel.send(content=content, embed=embed)
     await msg.delete(delay=delay)
     return msg
 
 
 async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, prefix_key: str):
-    """
-    Toggle a nickname prefix for a member.
-    
-    Args:
-        member: Discord member to modify
-        channel: Channel where the command was sent (for responses)
-        prefix_key: Which prefix to toggle ("brb", "st", "cost", or "spe")
-    """
     prefixes = {"brb": PREFIX_BRB, "st": PREFIX_ST, "cost": PREFIX_COST, "spe": PREFIX_SPEC}
     exclusive = ["st", "cost", "spe"]
     current_nick = get_member_name(member)
@@ -399,16 +335,8 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
         logger.error(f"Could not update nickname for {member.display_name}: {e}")
 
 
-# TimerManager will be instantiated after call_townspeople is defined
 
-# Clean dangling follower references
 async def clean_followers(guild: discord.Guild) -> None:
-    """
-    Remove follower references for members no longer in guild.
-    
-    Args:
-        guild: Discord guild to clean followers for
-    """
     valid_ids = {m.id for m in guild.members}
     
     # Clean follower_targets cache
@@ -436,51 +364,19 @@ async def clean_followers(guild: discord.Guild) -> None:
                 follower_targets.pop(fid, None)
 
 
-# Rate limiting helper
 def check_rate_limit(user_id: int, command: str, cooldown_seconds: int = COMMAND_COOLDOWN_SECONDS) -> bool:
-    """Check if user is rate-limited for a specific command.
-    
-    Uses per-user, per-command cooldowns to prevent spam.
-    
-    Args:
-        user_id: Discord user ID
-        command: Command name (e.g., "help", "players")
-        cooldown_seconds: Cooldown duration in seconds (default: 2s)
-        
-    Returns:
-        True if command is allowed (not rate-limited), False if on cooldown
-    """
     now = time.time()
-    if user_id not in command_cooldowns:
-        command_cooldowns[user_id] = {}
+    user_cmds = command_cooldowns.setdefault(user_id, {})
     
-    last_used = command_cooldowns[user_id].get(command, 0)
+    last_used = user_cmds.get(command, 0)
     if now - last_used < cooldown_seconds:
         return False
     
-    command_cooldowns[user_id][command] = now
-    
-    # Periodically clean up old cooldown entries (remove users inactive for >1 hour)
-    # Only do this occasionally to avoid performance impact
-    if len(command_cooldowns) > 100 and user_id % 50 == 0:  # Check every 50th user
-        cutoff = now - 3600  # 1 hour ago
-        stale_users = [uid for uid, cmds in command_cooldowns.items() 
-                      if all(timestamp < cutoff for timestamp in cmds.values())]
-        for uid in stale_users:
-            command_cooldowns.pop(uid, None)
-    
+    user_cmds[command] = now
     return True
 
 
 def add_script_emoji(script_name: str) -> str:
-    """Add emoji to script name if it's a base script.
-    
-    Args:
-        script_name: Name of the script
-        
-    Returns:
-        Script name with emoji prefix if applicable
-    """
     script_lower = script_name.lower()
     if 'trouble' in script_lower and 'brewing' in script_lower:
         return f"{EMOJI_TROUBLE_BREWING} {script_name}"
@@ -491,21 +387,7 @@ def add_script_emoji(script_name: str) -> str:
     return script_name
 
 
-# Helper to perform the same move logic used by *call
 async def call_townspeople(guild: discord.Guild, category_id: Optional[int] = None) -> tuple[int, discord.VoiceChannel]:
-    """
-    Move all players from BOTC category to Town Square channel in parallel.
-    
-    Args:
-        guild: Discord guild to perform moves in
-        category_id: Optional category ID to scope the call to a specific session
-        
-    Returns:
-        Tuple of (moved_count: int, dest_channel: discord.VoiceChannel)
-        
-    Raises:
-        ValueError: If Town Square not configured or not found
-    """
     guild_id = guild.id
     
     # Get session-specific configuration (required)
@@ -603,17 +485,13 @@ async def call_townspeople(guild: discord.Guild, category_id: Optional[int] = No
     return moved_count, dest_channel
 
 
-# Timer implementation moved into botc.timers.TimerManager
 
-# Instantiate TimerManager now that call_townspeople is available
 try:
     timer_manager = TimerManager(bot, db, call_townspeople)
 except (TypeError, ValueError) as e:
     logger.error(f"Failed to initialize TimerManager: {e}")
     timer_manager = None
 
-# Poll ending logic moved to `botc.polls` to avoid duplication.
-# Use `from botc.polls import _end_poll` where needed (handlers already import it).
 
 async def get_session_from_channel_wrapper(channel, session_manager):
     """Wrapper for session_manager.get_session_from_channel for backwards compatibility."""
@@ -621,7 +499,6 @@ async def get_session_from_channel_wrapper(channel, session_manager):
         return None
     return await session_manager.get_session_from_channel(channel, channel.guild)
 
-# Expose helper callables, data structures, and manager to cogs
 bot.get_active_players = get_active_players
 bot.is_storyteller = is_storyteller
 bot.is_main_storyteller = is_main_storyteller
@@ -631,7 +508,6 @@ bot.timer_manager = timer_manager
 bot.session_manager = None  # Will be set in on_ready after DB initialization
 bot.db = db
 bot.check_rate_limit = check_rate_limit
-# is_admin is now async and needs to be called with await is_admin(member, bot.db)
 bot.is_admin = lambda member: is_admin(member, bot.db)
 bot.send_temporary = send_temporary
 bot.toggle_prefix = toggle_prefix
@@ -646,8 +522,6 @@ bot.clean_followers = clean_followers
 bot.bot_initiated_nick_changes = bot_initiated_nick_changes
 
 
-# Expose the handler to cogs (SlashCog expects this attribute on `bot`)
-# Handlers are now imported from botc.handlers module
 from botc.handlers import start_game_handler as _start_game_handler
 
 async def start_game_handler(interaction: discord.Interaction, script: object, custom_name: str = ""):
@@ -657,15 +531,11 @@ async def start_game_handler(interaction: discord.Interaction, script: object, c
 bot.start_game_handler = start_game_handler
 
 
-# Duration parsing and helper functions have been moved to `botc.utils`.
-# Poll creation helper `create_poll_internal` has been moved to `botc.polls`.
 # Use `from botc.utils import parse_duration, humanize_seconds, format_end_time`
-# and `from botc.polls import create_poll_internal, _end_poll` where needed.
 
 
 
 
-# Expose endgame handler to cogs (SlashCog expects this attribute on `bot`)
 from botc.handlers import end_game_handler as _end_game_handler
 
 async def end_game_handler(interaction: discord.Interaction, winner: str):
@@ -729,18 +599,22 @@ async def stats_handler(interaction: discord.Interaction) -> None:
         good_wins = sum(1 for g in history if g.get("winner") == "Good")
         evil_wins = sum(1 for g in history if g.get("winner") == "Evil")
         
-        # Calculate win rates
         good_rate = (good_wins / total_games * 100) if total_games > 0 else 0
         evil_rate = (evil_wins / total_games * 100) if total_games > 0 else 0
         
-        # Count scripts played (normalize custom scripts to "Custom Script")
         scripts = {}
+        script_wins = {}
         for game in history:
             script = game.get("script", "Unknown")
-            # Normalize all custom scripts to just "Custom Script"
-            if script == "Custom Script" or script == "Homebrew Script":
+            if script in ["Custom Script", "Homebrew Script"]:
                 script = "Custom Script"
             scripts[script] = scripts.get(script, 0) + 1
+            
+            winner = game.get("winner")
+            if script not in script_wins:
+                script_wins[script] = {"Good": 0, "Evil": 0}
+            if winner in ["Good", "Evil"]:
+                script_wins[script][winner] += 1
         
         embed = discord.Embed(
             title=f"{EMOJI_SCRIPT} Server Stats",
@@ -767,20 +641,9 @@ async def stats_handler(interaction: discord.Interaction) -> None:
             sorted_scripts = sorted(scripts.items(), key=lambda x: x[1], reverse=True)[:3]
             script_lines = []
             for script_name, count in sorted_scripts:
-                # Calculate win rate for this script (normalize custom scripts in comparison)
-                script_games = []
-                for g in history:
-                    g_script = g.get("script", "Unknown")
-                    # Normalize for comparison
-                    if g_script == "Custom Script" or g_script == "Homebrew Script":
-                        g_script = "Custom Script"
-                    if g_script == script_name:
-                        script_games.append(g)
-                
-                script_good = sum(1 for g in script_games if g.get("winner") == "Good")
-                script_evil = sum(1 for g in script_games if g.get("winner") == "Evil")
-                good_pct = (script_good / count * 100) if count > 0 else 0
-                evil_pct = (script_evil / count * 100) if count > 0 else 0
+                wins = script_wins.get(script_name, {"Good": 0, "Evil": 0})
+                good_pct = (wins["Good"] / count * 100) if count > 0 else 0
+                evil_pct = (wins["Evil"] / count * 100) if count > 0 else 0
                 
                 script_lines.append(
                     f"{add_script_emoji(script_name)}\n"
@@ -1004,7 +867,6 @@ class GameHistoryView(discord.ui.View):
             await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
 
-# Expose stats and history handlers to cogs
 bot.stats_handler = stats_handler
 bot.gamehistory_handler = gamehistory_handler
 
@@ -1364,7 +1226,6 @@ async def clearhistory_handler(interaction: discord.Interaction) -> None:
         await safe_send_interaction(interaction, "❌ Failed to clear history. See logs.", ephemeral=True)
 
 
-# Expose admin handlers to cogs
 bot.deletegame_handler = deletegame_handler
 bot.clearhistory_handler = clearhistory_handler
 
@@ -1590,14 +1451,11 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
             logger.debug("Could not send error message")
 
 
-# Expose autosetup handler to cogs
 bot.autosetup_handler = autosetup_handler
 
 
-# on_guild_join event handler is now in EventHandlers cog
 
 
-# Load changelog data from external file
 def load_changelog():
     """Load changelog from changelog.json file"""
     try:
@@ -1612,7 +1470,6 @@ changelog_data = load_changelog()
 
 
 
-# Load cogs early - events cog will handle on_ready
 async def load_cogs():
     """Load all bot cogs."""
     try:
@@ -1629,10 +1486,8 @@ async def load_cogs():
         logger.error(f"Failed to load cogs: {e}")
         raise
 
-# Initialize session manager at module level so it's available to cogs
 session_manager: Optional[SessionManager] = None
 
-# Setup hook to initialize session manager and load cogs
 @bot.event
 async def setup_hook():
     """Setup hook called before bot connects to Discord.
@@ -1641,7 +1496,6 @@ async def setup_hook():
     """
     global session_manager
     
-    # Initialize session manager
     session_manager = SessionManager(db)
     bot.session_manager = session_manager
     logger.info("Session manager initialized")
@@ -1650,7 +1504,6 @@ async def setup_hook():
     await load_cogs()
 
 
-# cleanup_inactive_sessions task is now in EventHandlers cog
 
 
 @bot.event
@@ -1699,7 +1552,6 @@ async def on_message(message):
     await bot.process_commands(message)
 
 
-# Event handlers (on_voice_state_update, on_member_update, on_guild_join) 
 # are now in botc.cogs.events.EventHandlers
 
 
