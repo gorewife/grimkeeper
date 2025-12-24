@@ -43,6 +43,7 @@ class Session:
         storyteller_user_id: User ID of the storyteller for this session
         created_at: When this session was first created
         last_active: Last time this session was used
+        session_code: Human-friendly code for API/website integration (e.g., "s1", "s2")
     """
     guild_id: int
     category_id: int
@@ -55,6 +56,7 @@ class Session:
     created_at: Optional[float] = None
     last_active: Optional[float] = None
     vc_caps: dict[int, int] = field(default_factory=dict)  # {channel_id: original_limit}
+    session_code: Optional[str] = None  # Human-friendly identifier for website integration
     
     @property
     def session_id(self) -> tuple[int, int]:
@@ -77,6 +79,37 @@ class SessionManager:
     def __init__(self, db: Database):
         self.db = db
         self._cache: dict[tuple[int, int], Session] = {}
+    
+    async def _generate_session_code(self, guild_id: int) -> str:
+        """Generate a unique session code for a guild.
+        
+        Format: s1, s2, s3... (simple sequential numbers per guild)
+        
+        Args:
+            guild_id: Discord guild ID
+            
+        Returns:
+            Session code like "s1", "s2", etc.
+        """
+        # Get existing sessions for this guild to find next number
+        existing_sessions = await self.db.get_all_sessions_for_guild(guild_id)
+        
+        # Extract numbers from existing codes (e.g., "s1" -> 1, "s2" -> 2)
+        existing_numbers = []
+        for session in existing_sessions:
+            if session.session_code and session.session_code.startswith('s'):
+                try:
+                    num = int(session.session_code[1:])
+                    existing_numbers.append(num)
+                except ValueError:
+                    pass
+        
+        # Find next available number
+        next_num = 1
+        if existing_numbers:
+            next_num = max(existing_numbers) + 1
+        
+        return f"s{next_num}"
     
     async def get_session_from_channel(
         self, 
@@ -121,7 +154,7 @@ class SessionManager:
     ) -> Optional[Session]:
         """Resolve session from a Discord channel, creating it if it doesn't exist.
         
-        This is used by session-scoped config commands (/settown, /setannounce, etc.)
+        This is used by session-scoped config commands (/settown, /setexception, etc.)
         to allow manual session creation in any category.
         
         Args:
@@ -217,6 +250,55 @@ class SessionManager:
         # No session found
         return None
     
+    async def get_session_by_code(self, guild_id: int, session_code: str) -> Optional[Session]:
+        """Get a session by its session code.
+        
+        Args:
+            guild_id: Discord guild ID
+            session_code: Session code (e.g., "s1", "s2")
+            
+        Returns:
+            Session if found, None otherwise
+        """
+        session = await self.db.get_session_by_code(guild_id, session_code)
+        
+        if session:
+            # Cache it for future access
+            self._cache[session.session_id] = session
+        
+        return session
+    
+    async def _generate_session_code(self, guild_id: int) -> str:
+        """Generate a unique session code for a guild.
+        
+        Format: s1, s2, s3... (simple sequential numbers per guild)
+        
+        Args:
+            guild_id: Discord guild ID
+            
+        Returns:
+            Session code like "s1", "s2", etc.
+        """
+        # Get existing sessions for this guild to find next number
+        existing_sessions = await self.db.get_all_sessions_for_guild(guild_id)
+        
+        # Extract numbers from existing codes (e.g., "s1" -> 1, "s2" -> 2)
+        existing_numbers = []
+        for session in existing_sessions:
+            if session.session_code and session.session_code.startswith('s'):
+                try:
+                    num = int(session.session_code[1:])
+                    existing_numbers.append(num)
+                except ValueError:
+                    pass
+        
+        # Find next available number
+        next_num = 1
+        if existing_numbers:
+            next_num = max(existing_numbers) + 1
+        
+        return f"s{next_num}"
+    
     async def create_session(
         self, 
         guild_id: int, 
@@ -227,7 +309,8 @@ class SessionManager:
         announce_channel_id: Optional[int] = None,
         active_game_id: Optional[int] = None,
         storyteller_user_id: Optional[int] = None,
-        vc_caps: Optional[dict[int, int]] = None
+        vc_caps: Optional[dict[int, int]] = None,
+        session_code: Optional[str] = None
     ) -> Session:
         """Create a new session for a category.
         
@@ -241,12 +324,17 @@ class SessionManager:
             active_game_id: Optional active game ID
             storyteller_user_id: Optional storyteller user ID
             vc_caps: Optional dict of voice channel ID -> original user_limit
+            session_code: Optional session code (auto-generated if not provided)
             
         Returns:
             Newly created Session
         """
         import time
         now = time.time()
+        
+        # Generate session code if not provided
+        if not session_code:
+            session_code = await self._generate_session_code(guild_id)
         
         session = Session(
             guild_id=guild_id,
@@ -259,7 +347,8 @@ class SessionManager:
             storyteller_user_id=storyteller_user_id,
             created_at=now,
             last_active=now,
-            vc_caps=vc_caps or {}
+            vc_caps=vc_caps or {},
+            session_code=session_code
         )
         
         await self.db.create_session(session)

@@ -1091,14 +1091,16 @@ class SlashCog(commands.Cog):
                     found_category.id,
                     vc_caps=vc_caps
                 )
+                code_msg = f"\n**Session Code:** `{session.session_code}`\n_Use this code to link grimoire on website_"
             else:
-                # Update existing session with new VC caps snapshot
+                # Update existing session with new VC caps snapshot (preserve existing code)
                 session.vc_caps = vc_caps
                 await session_manager.update_session(session)
+                code_msg = f"\n**Session Code:** `{session.session_code}`" if session.session_code else ""
             
             cap_msg = f" (snapshotted {len(vc_caps)} capped voice channels)" if vc_caps else ""
             await interaction.response.send_message(
-                f"✅ BOTC category set to **{found_category.name}**{cap_msg}\n"
+                f"✅ BOTC category set to **{found_category.name}**{cap_msg}{code_msg}\n"
                 f"Voice channel caps have been saved. The bot will now manage these caps when privileged users join/leave.",
                 ephemeral=True
             )
@@ -1201,6 +1203,11 @@ class SlashCog(commands.Cog):
                 
                 # Build field value
                 field_value = f"{status_emoji} **{game_info}**\n"
+                
+                # Show session code prominently
+                if session.session_code:
+                    field_value += f"🔑 Code: `{session.session_code}`\n"
+                
                 field_value += f"📁 Category ID: `{session.category_id}`\n"
                 
                 if session.destination_channel_id:
@@ -1209,7 +1216,7 @@ class SlashCog(commands.Cog):
                         field_value += f"🏛️ Town Square: {dest_channel.mention}\n"
                 
                 if session.grimoire_link:
-                    field_value += f"📜 Grimoire configured\n"
+                    field_value += f"📜 Grimoire: {session.grimoire_link}\n"
                 
                 embed.add_field(
                     name=f"{idx}. {category_name}",

@@ -115,9 +115,9 @@
         "features": [
             "• **BREAKING**: Guild table no longer stores session config (grimoire, channels)",
             "• **Multi-Session**: Sessions auto-create when config commands used in any category",
-            "• **Multi-Session**: Manual setup supported - create category, run *settown to start session",
+            "• **Multi-Session**: Manual setup supported - create category, run /setbotc to start session",
             "• **Multi-Session**: Startup announcements sent to each session independently",
-            "• All config commands (*g, *settown, *setannounce) auto-create sessions if needed",
+            "• All config commands (*g, /settown, /setexception) are session-scoped",
             "• Improved recovery: deleted sessions can be recreated by running config commands",
             "• **New**: *game command - view current session's active game info",
             "• **Improved**: *sessions now filters deleted categories, sorts by last active"
@@ -188,7 +188,6 @@
             "• Hybrid announcements: session-scoped for games, guild system channel for bot updates",
             "• `/storytellerstats @user` now shows detailed individual stats with profile picture",
             "• `/stats` enhanced with balance indicators, per-script win rates, and trend analysis",
-            "• `*setannounce` now session-scoped for multi-session servers",
             "• Nickname change detection warns users to use bot commands instead of manual edits",
             "• `*changelog` moved to admin-only to prevent spam",
             "• Help text fixes: `*consult` and `*join` in correct categories",
@@ -447,8 +446,7 @@
         "version": "0.5.4",
         "title": "📢 Startup Announcements",
         "features": [
-            "`*setannounce #channel` command",
-            "Bot posts changelog on startup"
+            "Bot posts changelog on startup to configured channels (deprecated feature)"
         ]
     },
     {

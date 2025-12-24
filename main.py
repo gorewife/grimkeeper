@@ -1393,7 +1393,7 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
                     f"You now have **{session_number} active sessions**!\n\n"
                     f"**Session-Scoped Config:**\n"
                     f"• Each category has its own grimoire link, town square, exception channel\n"
-                    f"• Commands like `*g`, `*settown`, `*setannounce` affect only the category you run them in\n"
+                    f"• Commands like `*g` and `/settown` affect only the category you run them in\n"
                     f"• Game history and timers are tracked separately per session\n\n"
                     f"**Running Multiple Games:**\n"
                     f"• Run `/autosetup` again to create more game categories\n"
@@ -1413,9 +1413,9 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
                     f"1. Create a new Discord category (any name)\n"
                     f"2. Add text/voice channels inside it\n"
                     f"3. Run config commands from within that category:\n"
-                    f"   - `*settown #channel` creates session automatically\n"
-                    f"   - `*setannounce #channel`\n"
-                    f"   - `*setexception #channel` (optional)\n\n"
+                    f"   - `/setbotc <category>` to create the session\n"
+                    f"   - `/settown #channel` to set town square\n"
+                    f"   - `/setexception #channel` (optional)\n\n"
                     f"Each category operates independently with its own grimoire, game history, and timers!"
                 ),
                 inline=False

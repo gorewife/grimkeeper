@@ -919,15 +919,16 @@ class Database:
                 """INSERT INTO sessions (
                     guild_id, category_id, destination_channel_id, grimoire_link,
                     exception_channel_id, announce_channel_id, active_game_id,
-                    storyteller_user_id, created_at, last_active, vc_caps
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                    storyteller_user_id, created_at, last_active, vc_caps, session_code
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                 ON CONFLICT (guild_id, category_id) DO UPDATE SET
                     last_active = $10,
-                    vc_caps = $11""",
+                    vc_caps = $11,
+                    session_code = COALESCE(sessions.session_code, $12)""",
                 session.guild_id, session.category_id, session.destination_channel_id,
                 session.grimoire_link, session.exception_channel_id, session.announce_channel_id,
                 session.active_game_id, session.storyteller_user_id, session.created_at, session.last_active,
-                json.dumps(session.vc_caps)
+                json.dumps(session.vc_caps), session.session_code
             )
     
     async def get_session(self, guild_id: int, category_id: int):
@@ -970,6 +971,44 @@ class Database:
                 return Session(**data)
             return None
     
+    async def get_session_by_code(self, guild_id: int, session_code: str):
+        """Get a session by guild ID and session code.
+        
+        Args:
+            guild_id: Discord guild ID
+            session_code: Session code (e.g., "s1", "s2")
+            
+        Returns:
+            Session object if found, None otherwise
+        """
+        from botc.session import Session
+        import json
+        
+        async with self.pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """SELECT * FROM sessions 
+                   WHERE guild_id = $1 AND session_code = $2""",
+                guild_id, session_code
+            )
+            if row:
+                data = dict(row)
+                # Parse vc_caps from JSON
+                if 'vc_caps' in data:
+                    if data['vc_caps'] is None:
+                        data['vc_caps'] = {}
+                    elif isinstance(data['vc_caps'], str):
+                        data['vc_caps'] = json.loads(data['vc_caps']) if data['vc_caps'] else {}
+                        if data['vc_caps']:
+                            data['vc_caps'] = {int(k): v for k, v in data['vc_caps'].items()}
+                    elif isinstance(data['vc_caps'], dict):
+                        data['vc_caps'] = {int(k): v for k, v in data['vc_caps'].items()} if data['vc_caps'] else {}
+                    else:
+                        data['vc_caps'] = {}
+                else:
+                    data['vc_caps'] = {}
+                return Session(**data)
+            return None
+    
     async def update_session(self, session) -> None:
         """Update an existing session.
         
@@ -987,12 +1026,13 @@ class Database:
                     active_game_id = $7,
                     storyteller_user_id = $8,
                     last_active = $9,
-                    vc_caps = $10
+                    vc_caps = $10,
+                    session_code = $11
                 WHERE guild_id = $1 AND category_id = $2""",
                 session.guild_id, session.category_id, session.destination_channel_id,
                 session.grimoire_link, session.exception_channel_id, session.announce_channel_id,
                 session.active_game_id, session.storyteller_user_id, session.last_active,
-                json.dumps(session.vc_caps)
+                json.dumps(session.vc_caps), session.session_code
             )
     
     async def delete_session(self, guild_id: int, category_id: int) -> bool:
@@ -1006,11 +1046,22 @@ class Database:
             True if session was deleted, False if it didn't exist
         """
         async with self.pool.acquire() as conn:
-            # First, cancel any active game in this session
+            # First, get game_ids to clear from sessions table
+            game_ids = await conn.fetch(
+                "SELECT game_id FROM games WHERE guild_id = $1 AND category_id = $2 AND is_active = TRUE",
+                guild_id, category_id
+            )
+            
+            # Clear active_game_id from any sessions referencing these games
+            for row in game_ids:
+                await conn.execute(
+                    "UPDATE sessions SET active_game_id = NULL WHERE guild_id = $1 AND active_game_id = $2",
+                    guild_id, row['game_id']
+                )
+            
+            # Delete active games entirely (consistent with /endgame Cancel behavior)
             await conn.execute(
-                """UPDATE games 
-                   SET is_active = FALSE, winner = 'Cancelled' 
-                   WHERE guild_id = $1 AND category_id = $2 AND is_active = TRUE""",
+                "DELETE FROM games WHERE guild_id = $1 AND category_id = $2 AND is_active = TRUE",
                 guild_id, category_id
             )
             
