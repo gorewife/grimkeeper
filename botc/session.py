@@ -244,6 +244,12 @@ class SessionManager:
         session = await self.db.get_session(guild_id, category_id)
         
         if session:
+            # Auto-generate code for existing sessions that don't have one
+            if not session.session_code:
+                session.session_code = await self._generate_session_code(guild_id)
+                await self.db.update_session(session)
+                logger.info(f"Auto-generated session code '{session.session_code}' for existing session: guild={guild_id}, category={category_id}")
+            
             self._cache[session_key] = session
             return session
         
