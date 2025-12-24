@@ -394,6 +394,13 @@ class Database:
                 )
             game = dict(row) if row else None
             
+            # Clear active_game_id from session (match pattern in cancel_game/delete_game)
+            if game:
+                await conn.execute(
+                    "UPDATE sessions SET active_game_id = NULL WHERE guild_id = $1 AND active_game_id = $2",
+                    guild_id, game['game_id']
+                )
+            
             # Update storyteller stats if game completed successfully and has storyteller
             if game and winner in ('Good', 'Evil') and game.get('storyteller_id'):
                 # Calculate game duration in seconds
@@ -988,18 +995,34 @@ class Database:
                 json.dumps(session.vc_caps)
             )
     
-    async def delete_session(self, guild_id: int, category_id: int) -> None:
+    async def delete_session(self, guild_id: int, category_id: int) -> bool:
         """Delete a session.
         
         Args:
             guild_id: Discord guild ID
             category_id: Discord category ID
+            
+        Returns:
+            True if session was deleted, False if it didn't exist
         """
         async with self.pool.acquire() as conn:
+            # First, cancel any active game in this session
             await conn.execute(
+                """UPDATE games 
+                   SET is_active = FALSE, winner = 'Cancelled' 
+                   WHERE guild_id = $1 AND category_id = $2 AND is_active = TRUE""",
+                guild_id, category_id
+            )
+            
+            # Now delete the session
+            result = await conn.execute(
                 """DELETE FROM sessions WHERE guild_id = $1 AND category_id = $2""",
                 guild_id, category_id
             )
+            
+            # Check if any rows were deleted
+            rows_deleted = int(result.split()[-1]) if result else 0
+            return rows_deleted > 0
     
     async def get_all_sessions_for_guild(self, guild_id: int) -> List:
         """Get all sessions for a guild.

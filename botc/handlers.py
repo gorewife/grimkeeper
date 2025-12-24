@@ -197,6 +197,9 @@ async def start_game_handler(
         session_manager = bot.session_manager
         if session_manager and botc_category:
             try:
+                # Invalidate cache first to ensure we get fresh data
+                session_manager.invalidate_cache(guild_id=guild_id, category_id=botc_category.id)
+                
                 active_game = await db.get_active_game(guild_id, botc_category.id)
                 game_id = active_game.get("game_id") if active_game else None
                 
@@ -361,6 +364,11 @@ async def end_game_handler(
         
         if winner == "Cancel":
             await db.cancel_game(guild_id, category_id)
+            
+            # Invalidate session cache to ensure fresh data on next command
+            if bot.session_manager and category_id:
+                bot.session_manager.invalidate_cache(guild_id=guild_id, category_id=category_id)
+            
             await safe_send_interaction(
                 interaction,
                 "\n❌ **Game Cancelled**\n"
@@ -373,6 +381,10 @@ async def end_game_handler(
         # End game and record
         end_time = time.time()
         await db.end_game(guild_id=guild_id, end_time=end_time, winner=winner, category_id=category_id)
+        
+        # Invalidate session cache to ensure fresh data on next command
+        if bot.session_manager and category_id:
+            bot.session_manager.invalidate_cache(guild_id=guild_id, category_id=category_id)
         
         # Clear reminder tracking for this game (if event handler exists)
         event_handler = interaction.client.get_cog('EventHandlers')
