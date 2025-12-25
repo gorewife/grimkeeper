@@ -78,6 +78,7 @@ from botc.utils import write_json_atomic, add_script_emoji
 from botc.timers import TimerManager
 from botc.database import Database
 from botc.session import SessionManager
+from botc.announcements import AnnouncementProcessor
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(dotenv_path=BASE_DIR / ".env")
@@ -401,7 +402,7 @@ async def call_townspeople(guild: discord.Guild, category_id: Optional[int] = No
     # Get session for this category
     session = await session_manager.get_session(guild_id, category_id)
     if not session:
-        raise ValueError("❌ No session found for this category. An admin should configure it with `*settown #channel` first.")
+        raise ValueError("❌ No session found for this category. An admin should run `/setbotc` to create a session first.")
     
     # Use session-specific configuration
     if session.destination_channel_id:
@@ -411,7 +412,7 @@ async def call_townspeople(guild: discord.Guild, category_id: Optional[int] = No
     botc_category = guild.get_channel(category_id)
     
     if not dest_channel:
-        raise ValueError("❌ Town Square not configured for this session. An admin should run `*settown #channel` from within this category.")
+        raise ValueError("❌ Town Square not configured for this session. An admin should run `/settown #channel` from within this category.")
     
     if not botc_category:
         raise ValueError("❌ Could not find BOTC category. Please check the category configuration.")
@@ -1487,6 +1488,7 @@ async def load_cogs():
         raise
 
 session_manager: Optional[SessionManager] = None
+announcement_processor: Optional[AnnouncementProcessor] = None
 
 @bot.event
 async def setup_hook():
@@ -1494,11 +1496,16 @@ async def setup_hook():
     
     This runs before on_ready and is the proper place to load cogs.
     """
-    global session_manager
+    global session_manager, announcement_processor
     
     session_manager = SessionManager(db)
     bot.session_manager = session_manager
     logger.info("Session manager initialized")
+    
+    # Initialize announcement processor for website events
+    announcement_processor = AnnouncementProcessor(bot, db, session_manager)
+    bot.announcement_processor = announcement_processor
+    logger.info("Announcement processor initialized")
     
     # Load all cogs
     await load_cogs()

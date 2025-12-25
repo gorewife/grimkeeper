@@ -100,7 +100,7 @@ async def start_game_handler(
                 interaction,
                 "❌ Cannot determine which category to start game in.\n"
                 "Either run this command from a text channel inside your BOTC category, "
-                "or have an admin configure a default BOTC category with `*setbotc <category_name|category_id>`.",
+                "or have an admin create a session with `/setbotc <category>` or `/autosetup`.",
                 ephemeral=True
             )
             return
@@ -259,6 +259,16 @@ async def start_game_handler(
             value=players_text,
             inline=False
         )
+        
+        # Add session code if available
+        if session_manager and botc_category:
+            session = await session_manager.get_session(guild_id, botc_category.id)
+            if session and session.session_code:
+                embed.add_field(
+                    name="🔗 Session Code",
+                    value=f"`{session.session_code}` - Use this code to link stats on grim.hystericca.dev",
+                    inline=False
+                )
         
         embed.set_footer(text=f"Grimkeeper v{VERSION} • May fate be kind...")
         
@@ -472,7 +482,17 @@ async def end_game_handler(
         
         start_timestamp = int(game["start_time"])
         embed.add_field(name=f"**{EMOJI_CLOCK} Began**", value=f"<t:{start_timestamp}:t>", inline=True)
-        embed.set_footer(text=f"Grimkeeper v{VERSION} • The tale is told")
+        
+        # Add session code if available
+        session_manager = bot.session_manager
+        session = None
+        if session_manager and category_id:
+            session = await session_manager.get_session(guild_id, category_id)
+        
+        footer_text = f"Grimkeeper v{VERSION} • The tale is told"
+        if session and session.session_code:
+            footer_text += f" • Session: {session.session_code}"
+        embed.set_footer(text=footer_text)
         
         # Send to the channel where the command was used (not announcement channel)
         await interaction.response.send_message(embed=embed)

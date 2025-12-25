@@ -4,16 +4,27 @@ Complete command reference and setup guide for Grimkeeper.
 
 ## Setup
 
-### Initial Configuration
+### Initial Configuration (Admin Only - One Time)
 
 1. Invite the bot to your server
-2. Run `/autosetup` to create channels automatically, or:
-   - `/setbotc Blood on the Clocktower` - Set your BOTC category
-   - `/settown #town-square` - Set town square channel
+2. **Admin** runs `/autosetup` to create channels automatically, or:
+   - `/setbotc <category>` - Create a session for a specific category
+   - `/settown #channel` - Set town square channel for that session
+
+**Important:** Sessions are persistent infrastructure. Once created, they exist forever until deleted. You never need to run `/setbotc` again for that category.
 
 ### Multiple Sessions
 
-Run `/setbotc` on different categories to create multiple independent game sessions.
+To run multiple simultaneous games:
+- **Option 1:** Run `/autosetup` again (creates another gothic-themed category)
+- **Option 2:** Create a new category manually, then run `/setbotc <new-category>` from a channel inside it
+
+Each session has its own:
+- Session code (s1, s2, s3...)
+- Grimoire link
+- Town square channel
+- Game history
+- Active timers
 
 ---
 

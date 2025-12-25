@@ -103,6 +103,11 @@ class EventHandlers(commands.Cog):
         # Start background task for long-running game reminders
         self.check_long_running_games.start()
         
+        # Start announcement processor for website events
+        if hasattr(self.bot, 'announcement_processor') and self.bot.announcement_processor:
+            self.bot.announcement_processor.start()
+            logger.info("Started announcement processor")
+        
         # Restore persisted timers from before restart
         if self.bot.timer_manager:
             await self.bot.timer_manager.load_timers()
@@ -542,12 +547,13 @@ class EventHandlers(commands.Cog):
                     "**Option 2: Manual Setup**\n"
                     "1. Create a Discord category for your game (any name you want)\n"
                     "2. Create text and voice channels inside that category\n"
-                    "3. Run these commands from within a channel in that category:\n"
+                    "3. Run `/setbotc <category>` to create a session for that category\n"
+                    "4. Then configure it from within the category:\n"
                     "   - `/settown #voice-channel` - Set Town Square\n"
                     "   - `/setexception #voice-channel` (optional) - Set private ST channel\n\n"
                     "**Multi-Session Support:**\n"
-                    "Create multiple categories and configure each one independently. "
-                    "Session config commands auto-create sessions when used in a category."
+                    "Run `/autosetup` multiple times or use `/setbotc` on different categories to create multiple independent game sessions. "
+                    "Each session is persistent and has its own session code for website integration."
                 ),
                 inline=False
             )

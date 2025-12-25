@@ -1100,6 +1100,9 @@ class Commands(commands.Cog):
         if session.grimoire_link:
             config_info += f"**{EMOJI_SCROLL} Grimoire:** {session.grimoire_link}\n"
         
+        if session.session_code:
+            config_info += f"**🔗 Session Code:** `{session.session_code}` - Use on grim.hystericca.dev\n"
+        
         if config_info.strip():  # Only add field if there's actual content
             embed.add_field(name=f"{EMOJI_GEAR} Session", value=config_info, inline=False)
         

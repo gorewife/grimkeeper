@@ -4,8 +4,11 @@ This module provides the Session abstraction that allows multiple concurrent gam
 within a single Discord server by scoping game state to individual categories.
 
 Key concepts:
+- Sessions are PERSISTENT ADMIN INFRASTRUCTURE (created once, used forever)
 - session_id = (guild_id, category_id) - uniquely identifies a game session
-- Each category can run an independent game with its own ST, grimoire, players, timer
+- Each session has a permanent code (s1, s2, s3) used for all games in that category
+- Sessions are created by admins via /setbotc or /autosetup, NOT by storytellers
+- Each category can run independent games with own ST, grimoire, players, timer
 - Commands are automatically scoped to the session based on the channel they're used in
 """
 from __future__ import annotations
@@ -152,10 +155,11 @@ class SessionManager:
         channel: discord.TextChannel | discord.VoiceChannel,
         guild: discord.Guild
     ) -> Optional[Session]:
-        """Resolve session from a Discord channel, creating it if it doesn't exist.
+        """DEPRECATED: Resolve session from a Discord channel, creating it if it doesn't exist.
         
-        This is used by session-scoped config commands (/settown, /setexception, etc.)
-        to allow manual session creation in any category.
+        ⚠️ WARNING: This method is deprecated. Only /setbotc and /autosetup should create sessions.
+        This method remains for backward compatibility but should NOT be used in new code.
+        All session-scoped commands now require pre-existing sessions.
         
         Args:
             channel: The Discord channel where a command was used
@@ -244,11 +248,11 @@ class SessionManager:
         session = await self.db.get_session(guild_id, category_id)
         
         if session:
-            # Auto-generate code for existing sessions that don't have one
+            # Auto-generate code for legacy sessions that don't have one (migration support)
             if not session.session_code:
                 session.session_code = await self._generate_session_code(guild_id)
                 await self.db.update_session(session)
-                logger.info(f"Auto-generated session code '{session.session_code}' for existing session: guild={guild_id}, category={category_id}")
+                logger.info(f"Auto-generated session code '{session.session_code}' for legacy session: guild={guild_id}, category={category_id}")
             
             self._cache[session_key] = session
             return session
@@ -273,37 +277,6 @@ class SessionManager:
             self._cache[session.session_id] = session
         
         return session
-    
-    async def _generate_session_code(self, guild_id: int) -> str:
-        """Generate a unique session code for a guild.
-        
-        Format: s1, s2, s3... (simple sequential numbers per guild)
-        
-        Args:
-            guild_id: Discord guild ID
-            
-        Returns:
-            Session code like "s1", "s2", etc.
-        """
-        # Get existing sessions for this guild to find next number
-        existing_sessions = await self.db.get_all_sessions_for_guild(guild_id)
-        
-        # Extract numbers from existing codes (e.g., "s1" -> 1, "s2" -> 2)
-        existing_numbers = []
-        for session in existing_sessions:
-            if session.session_code and session.session_code.startswith('s'):
-                try:
-                    num = int(session.session_code[1:])
-                    existing_numbers.append(num)
-                except ValueError:
-                    pass
-        
-        # Find next available number
-        next_num = 1
-        if existing_numbers:
-            next_num = max(existing_numbers) + 1
-        
-        return f"s{next_num}"
     
     async def create_session(
         self, 
