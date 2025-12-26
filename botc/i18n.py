@@ -15,8 +15,8 @@ class Translator:
     def __init__(self, default_language: str = 'en', db=None):
         self.default_language = default_language
         self.translations: Dict[str, dict] = {}
-        self.guild_languages: Dict[int, str] = {}  # guild_id -> language_code (cached)
-        self.db = db  # Database instance for persistence
+        self.guild_languages: Dict[int, str] = {}
+        self.db = db
         self.load_all_translations()
     
     def load_all_translations(self):
@@ -24,7 +24,7 @@ class Translator:
         locales_dir = Path(__file__).parent.parent / 'locales'
         
         for json_file in locales_dir.glob('*.json'):
-            language_code = json_file.stem  # e.g., 'en', 'es', 'pl', 'ru'
+            language_code = json_file.stem
             try:
                 with open(json_file, 'r', encoding='utf-8') as f:
                     self.translations[language_code] = json.load(f)
@@ -62,11 +62,8 @@ class Translator:
             t.get(guild_id, "game_messages.good_wins", index=2)
         """
         lang = self.get_guild_language(guild_id)
-        
-        # Get translation dict for this language
         trans = self.translations.get(lang, self.translations.get(self.default_language, {}))
         
-        # Navigate nested keys (e.g., "errors.no_permission" -> trans["errors"]["no_permission"])
         keys = key_path.split('.')
         value = trans
         for k in keys:
@@ -76,23 +73,20 @@ class Translator:
                 value = None
                 break
         
-        # Fallback to English if translation missing
         if value is None:
             value = self._get_fallback(key_path)
         
-        # Handle list access (e.g., for random win messages)
         if isinstance(value, list):
             index = kwargs.pop('index', 0)
             value = value[index] if 0 <= index < len(value) else value[0]
         
-        # Substitute variables
         if isinstance(value, str) and kwargs:
             try:
                 value = value.format(**kwargs)
             except KeyError as e:
                 logger.warning(f"Missing format variable {e} in translation {key_path}")
         
-        return value or key_path  # Return key if all else fails
+        return value or key_path
     
     def _get_fallback(self, key_path: str) -> Optional[str]:
         """Get English fallback if translation is missing."""

@@ -7,65 +7,39 @@ from __future__ import annotations
 
 VERSION = "1.8.0"
 
-# ============================================================================
-# COLOR PALETTE - Grimkeeper Theme
-# ============================================================================
-# Primary colors for consistent visual identity across all embeds
-
-# Main bot color - deep purple, evocative of mystery and night
 COLOR_PRIMARY = 0x4A235A
+COLOR_GOOD = 0x5DADE2
+COLOR_EVIL = 0x641E16
+COLOR_TIE = 0x566573
+COLOR_GOLD = 0x7D6608
+COLOR_SHADOW = 0x1C2833
+COLOR_SPECTRAL = 0x6C3483
+COLOR_SUCCESS = 0x27AE60
+COLOR_WARNING = 0xE67E22
+COLOR_ERROR = 0x641E16
+COLOR_INFO = 0x566573
 
-# Team colors (official BOTC)
-COLOR_GOOD = 0x5DADE2      # Townsfolk blue - good team wins
-COLOR_EVIL = 0x641E16      # Blood red - evil team wins, errors
-COLOR_TIE = 0x566573       # Moonlight silver - tie games
-
-# Accent colors
-COLOR_GOLD = 0x7D6608      # Clocktower gold - important announcements, highlights
-COLOR_SHADOW = 0x1C2833    # Shadow gray - secondary info, muted content
-COLOR_SPECTRAL = 0x6C3483  # Spectral purple - special events, dramatic moments
-
-# Status colors
-COLOR_SUCCESS = 0x27AE60   # Green - confirmations, success messages
-COLOR_WARNING = 0xE67E22   # Orange - warnings, alerts
-COLOR_ERROR = 0x641E16     # Blood red - errors, failures
-COLOR_INFO = 0x566573      # Silver - neutral information
-
-# ============================================================================
-# NICKNAME PREFIX CONSTANTS
-# ============================================================================
-
-# Nickname prefix constants
 PREFIX_ST = "(ST) "
 PREFIX_COST = "(Co-ST) "
 PREFIX_SPEC = "!"
 PREFIX_BRB = "[BRB] "
 
-# Message deletion delays (in seconds)
-DELETE_DELAY_QUICK = 2      # Quick confirmations
-DELETE_DELAY_NORMAL = 3     # Normal feedback messages
-DELETE_DELAY_MEDIUM = 4     # Medium-length messages
-DELETE_DELAY_CONFIRMATION = 4  # Action confirmations (timer cancel, etc.)
-DELETE_DELAY_ERROR = 5      # Error messages
-DELETE_DELAY_INFO = 8       # Informational messages
-DELETE_DELAY_LONG = 10      # Long-form content
-DELETE_DELAY_DRAMATIC = 15  # Timer completions, dramatic announcements
+DELETE_DELAY_QUICK = 2
+DELETE_DELAY_NORMAL = 3
+DELETE_DELAY_MEDIUM = 4
+DELETE_DELAY_CONFIRMATION = 4
+DELETE_DELAY_ERROR = 5
+DELETE_DELAY_INFO = 8
+DELETE_DELAY_LONG = 10
+DELETE_DELAY_DRAMATIC = 15
 
-# Duration limits
-MAX_DURATION_SECONDS = 86400  # 24 hours - cap for timers and polls
+MAX_DURATION_SECONDS = 86400
+DEFAULT_POLL_DURATION = 300
+MAX_POLL_DURATION = MAX_DURATION_SECONDS
+COMMAND_COOLDOWN_SECONDS = 2
+COMMAND_COOLDOWN_LONG = 30
+MAX_NICK_LENGTH = 32
 
-# Poll defaults
-DEFAULT_POLL_DURATION = 300  # 5 minutes in seconds
-MAX_POLL_DURATION = MAX_DURATION_SECONDS  # 24 hours in seconds
-
-# Rate limiting
-COMMAND_COOLDOWN_SECONDS = 2  # Minimum seconds between commands per user
-COMMAND_COOLDOWN_LONG = 30  # Longer cooldown for heavy info commands
-
-# Discord limits
-MAX_NICK_LENGTH = 32  # Maximum length for Discord nicknames
-
-# Commands that should be deleted for cleaner chat
 DELETABLE_COMMANDS = [
     "*!", "*st", "*cost", "*brb", "*help", "*g", "*spec", "*unspec",
     "*shadows", "*dnd", "*settown", "*setbotc", "*call",
@@ -73,18 +47,15 @@ DELETABLE_COMMANDS = [
     "*mute", "*unmute"
 ]
 
-# Script emojis
-SCRIPT_EMOJI_TB = "🍺"  # Beer mug for Trouble Brewing
-SCRIPT_EMOJI_SNV = "🪻"  # Violet for Sects & Violets
-SCRIPT_EMOJI_BMR = "🌙"  # Crescent moon for Bad Moon Rising
+SCRIPT_EMOJI_TB = "🍺"
+SCRIPT_EMOJI_SNV = "🪻"
+SCRIPT_EMOJI_BMR = "🌙"
 
 # Team icons from BOTC Wiki
 ICON_GOOD = "https://wiki.bloodontheclocktower.com/images/1/12/Generic_townsfolk.png"
+ICON_GOOD = "https://wiki.bloodontheclocktower.com/images/1/12/Generic_townsfolk.png"
 ICON_EVIL = "https://wiki.bloodontheclocktower.com/images/5/52/Generic_demon.png"
-
-# Custom Discord emojis (latest uploads)
-EMOJI_SECTS_AND_VIOLETS = "<:sects_and_violets:1443464437309636618>"
-EMOJI_BAD_MOON_RISING = "<:bad_moon_rising:1443464418317963314>"
+ng:1443464418317963314>"
 EMOJI_TOWN_SQUARE = "<:town_square:1443463539397365981>"
 EMOJI_SWORD = "<:sword:1443463537879023676>"
 EMOJI_SCRIPT = "<:script:1443463534766981181>"
@@ -109,16 +80,11 @@ EMOJI_STAR = "<:general_star:1446683877342183445>"
 
 # Database configuration
 DATABASE_POOL_MIN_SIZE = 2
+DATABASE_POOL_MIN_SIZE = 2
 DATABASE_POOL_MAX_SIZE = 10
-DATABASE_COMMAND_TIMEOUT = 60  # Seconds
-DATABASE_QUERY_TIMEOUT = 5.0   # Seconds for individual queries
-
-# Changelog display
-MAX_CHANGELOG_VERSIONS = 10  # Maximum versions to show in *changelog
-
-# Discord limits
-DISCORD_NICKNAME_MAX_LENGTH = 32
-DISCORD_EMBED_MAX_CHARS = 6000
+DATABASE_COMMAND_TIMEOUT = 60
+DATABASE_QUERY_TIMEOUT = 5.0
+MAX_CHANGELOG_VERSIONS = 10X_CHARS = 6000
 DISCORD_FIELD_MAX_CHARS = 1024
 
 # Poll script options

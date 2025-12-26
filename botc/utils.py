@@ -44,7 +44,6 @@ def parse_duration(duration_str: str) -> int:
             return hours * 3600 + minutes * 60 + secs
         raise ValueError("invalid colon duration")
 
-    # Match number+unit segments, e.g. '1h', '30m', '90s', allowing multiple segments
     total = 0
     any_match = False
     for m in re.finditer(r"(\d+)\s*(d|h|m|s)?", s):
@@ -52,7 +51,6 @@ def parse_duration(duration_str: str) -> int:
         val = int(m.group(1))
         unit = m.group(2)
         if not unit:
-            # unitless numbers treated as seconds
             total += val
         elif unit == 'd':
             total += val * 86400
@@ -66,7 +64,6 @@ def parse_duration(duration_str: str) -> int:
     if any_match and total > 0:
         return total
 
-    # fallback: if the whole string is digits, treat as seconds
     if s.isdigit():
         return int(s)
 
@@ -92,21 +89,12 @@ def humanize_seconds(seconds: Union[int, float]) -> str:
 
 
 def format_end_time(epoch_seconds: float) -> str:
-    """Return Discord-friendly timestamp markup for a given epoch seconds.
-
-    Example: <t:1615555200:T>
-    """
+    """Return Discord-friendly timestamp markup."""
     return f"<t:{int(epoch_seconds)}:T>"
 
 
 def write_json_atomic(path: Path | str, data, *, indent: int = 2, ensure_ascii: bool = False) -> None:
-    """Write JSON to `path` atomically.
-
-    - Writes to a temporary file in the same directory, fsyncs, then atomically
-      replaces the target file. This avoids corrupting the file if the process
-      is killed mid-write.
-    - Uses json.dump with the given indent and ensure_ascii options.
-    """
+    """Write JSON to path atomically to avoid corruption on crash."""
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(prefix=p.name, dir=str(p.parent))
@@ -115,10 +103,8 @@ def write_json_atomic(path: Path | str, data, *, indent: int = 2, ensure_ascii: 
             json.dump(data, f, ensure_ascii=ensure_ascii, indent=indent)
             f.flush()
             os.fsync(f.fileno())
-        # Atomic replace
         os.replace(tmp, str(p))
     except Exception:
-        # If anything goes wrong, ensure temp file removed
         try:
             os.remove(tmp)
         except Exception:
@@ -126,32 +112,17 @@ def write_json_atomic(path: Path | str, data, *, indent: int = 2, ensure_ascii: 
         raise
 
 
-# ============================================================================
-# Discord Member & Guild Utilities
-# ============================================================================
-
 async def get_botc_category(guild: discord.Guild, db) -> Optional[discord.CategoryChannel]:
-    """
-    Get the BOTC category for a guild.
+    """Get the BOTC category for a guild.
     First tries configured category ID from database, then falls back to name matching.
-    
-    Args:
-        guild: Discord guild to search
-        db: Database connection
-        
-    Returns:
-        CategoryChannel if found, None otherwise
     """
     guild_id = guild.id
     botc_category = None
-    
-    # Try configured category ID first
     guild_config = await db.get_guild(guild_id)
     if guild_config and guild_config.get("botc_category_id"):
         cfg_cat_id = guild_config["botc_category_id"]
         botc_category = next((c for c in guild.categories if c.id == cfg_cat_id), None)
     
-    # Fallback to name matching
     if not botc_category:
         for category in guild.categories:
             if category.name and category.name.lower() in ["botc", "bot c", "🩸• blood on the clocktower", "blood on the clocktower"]:
@@ -162,18 +133,7 @@ async def get_botc_category(guild: discord.Guild, db) -> Optional[discord.Catego
 
 
 async def get_exception_channel_ids(guild: discord.Guild, db) -> set[int]:
-    """Get set of voice channel IDs that should be excluded from *call operations.
-    
-    These channels will be skipped when performing `*call` or timer-driven calls.
-    Typically used for storyteller consultation rooms.
-    
-    Args:
-        guild: Discord guild to check
-        db: Database connection
-        
-    Returns:
-        Set of channel IDs to exclude from mass moves
-    """
+    """Get set of voice channel IDs that should be excluded from *call operations."""
     guild_id = guild.id
     ids: set[int] = set()
     try:
@@ -188,21 +148,10 @@ async def get_exception_channel_ids(guild: discord.Guild, db) -> set[int]:
 
 
 def is_storyteller(member: discord.Member) -> bool:
-    """Check if a member is a storyteller (ST or Co-ST).
-    
-    Checks if member has ST/Co-ST prefix in their nickname.
-    Both ST and Co-ST have equal command permissions.
-    
-    Args:
-        member: Discord member to check
-        
-    Returns:
-        True if member has ST/Co-ST prefix, False otherwise
-    """
+    """Check if a member is a storyteller (ST or Co-ST)."""
     if not member:
         return False
     
-    # Check nickname prefix (both ST and Co-ST)
     if member.nick:
         nick = strip_brb_prefix(member.nick)
         return (nick.startswith(PREFIX_ST) or nick.startswith(PREFIX_COST))
@@ -211,16 +160,7 @@ def is_storyteller(member: discord.Member) -> bool:
 
 
 def is_main_storyteller(member: discord.Member) -> bool:
-    """Check if a member is the MAIN storyteller (ST, not Co-ST).
-    
-    Used for stat tracking - only main ST gets credit for games.
-    
-    Args:
-        member: Discord member to check
-        
-    Returns:
-        True if member has ST prefix (not Co-ST), False otherwise
-    """
+    """Check if a member is the MAIN storyteller (ST, not Co-ST)."""
     if not member or not member.nick:
         return False
     
@@ -229,14 +169,7 @@ def is_main_storyteller(member: discord.Member) -> bool:
 
 
 def strip_st_prefix(display_name: str) -> str:
-    """Remove storyteller prefix from display name if present.
-    
-    Args:
-        display_name: The member's display name
-        
-    Returns:
-        Display name without (ST) or (Co-ST) prefix
-    """
+    """Remove storyteller prefix from display name if present."""
     name = display_name
     if name.startswith(PREFIX_ST):
         name = name[len(PREFIX_ST):]
@@ -246,28 +179,14 @@ def strip_st_prefix(display_name: str) -> str:
 
 
 def strip_brb_prefix(nickname: str) -> str:
-    """Remove BRB prefix from nickname if present.
-    
-    Args:
-        nickname: The member's nickname
-        
-    Returns:
-        Nickname without (BRB) prefix
-    """
+    """Remove BRB prefix from nickname if present."""
     if nickname.startswith(PREFIX_BRB):
         return nickname[len(PREFIX_BRB):]
     return nickname
 
 
 def add_script_emoji(script_name: str) -> str:
-    """Add emoji to script name if it's a base script.
-    
-    Args:
-        script_name: Name of the script
-        
-    Returns:
-        Script name with emoji prefix if applicable
-    """
+    """Add emoji to script name if it's a base script."""
     from botc.constants import EMOJI_TROUBLE_BREWING, EMOJI_SECTS_AND_VIOLETS, EMOJI_BAD_MOON_RISING
     
     script_lower = script_name.lower()
@@ -281,15 +200,7 @@ def add_script_emoji(script_name: str) -> str:
 
 
 def get_member_name(member: discord.Member) -> str:
-    """
-    Get the display name for a member (nick if available, else display_name).
-    
-    Args:
-        member: Discord member
-        
-    Returns:
-        Member's nickname if set, otherwise display_name, or empty string
-    """
+    """Get the display name for a member."""
     return member.nick or member.display_name or ""
 
 

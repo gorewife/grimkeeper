@@ -135,13 +135,11 @@ class AnnouncementProcessor:
     
     async def _get_announce_channel(self, guild: discord.Guild, session, category_id: int):
         """Get the announcement channel for a session."""
-        # Try session announce channel first
         if session and session.announce_channel_id:
             channel = guild.get_channel(session.announce_channel_id)
             if channel:
                 return channel
         
-        # Fallback: find first text channel in category
         if category_id:
             category = guild.get_channel(category_id)
             if category and isinstance(category, discord.CategoryChannel):
@@ -152,7 +150,7 @@ class AnnouncementProcessor:
         return None
     
     async def _create_game_start_embed_from_website(self, guild: discord.Guild, game, session):
-        """Create game start embed (simplified from handlers.py)."""
+        """Create game start embed."""
         from botc.constants import EMOJI_TOWN_SQUARE, EMOJI_SCRIPT, EMOJI_PLAYERS, EMOJI_CANDLE, VERSION
         from botc.utils import strip_st_prefix, add_script_emoji
         
@@ -200,7 +198,6 @@ class AnnouncementProcessor:
         embed.add_field(name="\u200b", value="\u200b", inline=True)
         
         if players_list and len(players_list) <= 25:
-            # Filter out None/null values from player list
             valid_players = [p for p in players_list if p]
             if valid_players:
                 players_text = ", ".join(valid_players)
@@ -210,7 +207,6 @@ class AnnouncementProcessor:
                     inline=False
                 )
         
-        # Add session code
         if session and session.session_code:
             embed.add_field(
                 name="🔗 Session Code",
@@ -253,14 +249,12 @@ class AnnouncementProcessor:
         display_name = custom_name if custom_name else script
         script_display = add_script_emoji(display_name)
         winner = game['winner']
-        
-        # Calculate duration
+
         duration_seconds = int(game['end_time'] - game['start_time'])
         hours, remainder = divmod(duration_seconds, 3600)
         minutes, _ = divmod(remainder, 60)
         duration_str = f"{hours}h {minutes}m" if hours > 0 else f"{minutes}m"
         
-        # Create embed based on winner
         if winner == "Good":
             embed = discord.Embed(
                 title=f"{EMOJI_GOOD_WIN} The Dawn Breaks",

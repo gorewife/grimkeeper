@@ -10,52 +10,25 @@ class GrimkeeperError(Exception):
 
 
 class ConfigurationError(GrimkeeperError):
-    """Raised when server configuration is missing or invalid.
-    
-    Examples:
-        - BOTC category not set or not found
-        - Town Square channel not configured
-        - Announcement channel missing
-    """
+    """Raised when server configuration is missing or invalid."""
     pass
 
 
 class PermissionError(GrimkeeperError):
-    """Raised when bot lacks required Discord permissions.
-    
-    Examples:
-        - Missing 'Move Members' permission for *call
-        - Missing 'Manage Channels' permission for voice caps
-        - Missing 'Manage Nicknames' permission for prefix system
-    """
+    """Raised when bot lacks required Discord permissions."""
     pass
 
 
 class DatabaseError(GrimkeeperError):
-    """Raised when database operations fail.
-    
-    Examples:
-        - Connection timeout
-        - Query execution failure
-        - Schema initialization error
-    """
+    """Raised when database operations fail."""
     pass
 
 
 class RateLimitError(GrimkeeperError):
-    """Raised when a user exceeds command rate limits.
-    
-    Note: Usually handled silently by ignoring the command.
-    """
+    """Raised when a user exceeds command rate limits."""
     pass
 
 
 class ValidationError(GrimkeeperError):
-    """Raised when user input validation fails.
-    
-    Examples:
-        - Invalid duration format for timers
-        - Invalid poll options
-        - Invalid game winner choice
-    """
+    """Raised when user input validation fails."""
     pass

@@ -216,25 +216,41 @@ class Timers(commands.Cog):
                     msg = await message.channel.send("Timer manager not available.")
                     await msg.delete(delay=DELETE_DELAY_CONFIRMATION)
                     return
-                    
-                info = timer_manager.scheduled_timers.get(message.guild.id)
-                if not info:
-                    msg = await message.channel.send("No active timer to cancel.")
+                
+                success, response = timer_manager.stop_timer(message.guild.id)
+                msg = await message.channel.send(response)
+                await msg.delete(delay=DELETE_DELAY_CONFIRMATION)
+                
+                if success:
+                    await timer_manager.save_timers()
+                return
+            
+            if arg.lower() == "pause":
+                if not timer_manager:
+                    msg = await message.channel.send("Timer manager not available.")
                     await msg.delete(delay=DELETE_DELAY_CONFIRMATION)
                     return
-                try:
-                    info["task"].cancel()
-                except Exception:
-                    logger.exception("Failed to cancel previous timer task")
-                try:
-                    if info.get("announce_msg"):
-                        await info["announce_msg"].delete()
-                except Exception:
-                    logger.exception("Failed to delete previous timer announce message")
-                timer_manager.scheduled_timers.pop(message.guild.id, None)
-                await timer_manager.save_timers()
-                msg = await message.channel.send("❌ Timer cancelled.")
+                
+                success, response = timer_manager.pause_timer(message.guild.id)
+                msg = await message.channel.send(response)
                 await msg.delete(delay=DELETE_DELAY_CONFIRMATION)
+                
+                if success:
+                    await timer_manager.save_timers()
+                return
+            
+            if arg.lower() == "resume":
+                if not timer_manager:
+                    msg = await message.channel.send("Timer manager not available.")
+                    await msg.delete(delay=DELETE_DELAY_CONFIRMATION)
+                    return
+                
+                success, response = timer_manager.resume_timer(message.guild.id, message.channel)
+                msg = await message.channel.send(response)
+                await msg.delete(delay=DELETE_DELAY_CONFIRMATION)
+                
+                if success:
+                    await timer_manager.save_timers()
                 return
 
             # set duration

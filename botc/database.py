@@ -21,15 +21,7 @@ DEFAULT_COMMAND_TIMEOUT = 60
 
 
 class Database:
-    """Async PostgreSQL database connection pool manager.
-    
-    Provides high-level methods for all database operations with proper
-    error handling and connection pooling.
-    
-    Attributes:
-        connection_string: PostgreSQL connection string
-        pool: asyncpg connection pool (None until connect() is called)
-    """
+    """Async PostgreSQL database connection pool manager."""
     
     def __init__(
         self, 
@@ -38,14 +30,7 @@ class Database:
         max_size: int = DEFAULT_POOL_MAX_SIZE,
         timeout: int = DEFAULT_COMMAND_TIMEOUT
     ):
-        """Initialize database manager.
-        
-        Args:
-            connection_string: PostgreSQL connection URL
-            min_size: Minimum connection pool size (default: 2)
-            max_size: Maximum connection pool size (default: 10)
-            timeout: Command timeout in seconds (default: 60)
-        """
+        """Initialize database manager."""
         self.connection_string = connection_string
         self.min_size = min_size
         self.max_size = max_size
@@ -53,11 +38,7 @@ class Database:
         self.pool: Optional[asyncpg.Pool] = None
     
     async def connect(self) -> None:
-        """Create database connection pool.
-        
-        Raises:
-            DatabaseError: If connection fails
-        """
+        """Create database connection pool."""
         try:
             self.pool = await asyncpg.create_pool(
                 self.connection_string,
@@ -161,22 +142,13 @@ class Database:
             return dict(row) if row else None
     
     async def upsert_guild(self, guild_id: int, **kwargs) -> None:
-        """Insert or update guild configuration.
-        
-        Only accepts guild-level settings:
-        - botc_category_id: Default category for legacy commands
-        
-        All session-specific config (channels, grimoire links) should be
-        stored in the sessions table via SessionManager.
-        """
+        """Insert or update guild configuration."""
         fields = ['botc_category_id']
         
-        # Filter to only fields provided in kwargs
         provided_fields = [field for field in fields if field in kwargs]
         values = [kwargs[field] for field in provided_fields]
         
         if not provided_fields:
-            # Just ensure guild exists
             async with self.pool.acquire() as conn:
                 await conn.execute(
                     "INSERT INTO guilds (guild_id) VALUES ($1) ON CONFLICT DO NOTHING",
@@ -184,11 +156,8 @@ class Database:
                 )
             return
         
-        # Build INSERT clause with only provided fields
         insert_fields = ', '.join(provided_fields)
         insert_placeholders = ', '.join(f'${i+2}' for i in range(len(values)))
-        
-        # Build UPDATE clause
         update_set = ', '.join(f"{field} = ${i+2}" for i, field in enumerate(provided_fields))
         
         query = f"""

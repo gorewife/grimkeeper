@@ -18,17 +18,7 @@ async def safe_send_interaction(
     embed: discord.Embed = None,
     ephemeral: bool = True
 ) -> bool:
-    """Safely send interaction response, handling already-responded cases.
-    
-    Args:
-        interaction: Discord interaction to respond to
-        content: Text content (optional)
-        embed: Embed object (optional)
-        ephemeral: Whether message should be ephemeral (default: True)
-        
-    Returns:
-        True if message sent successfully, False otherwise
-    """
+    """Safely send interaction response, handling already-responded cases."""
     try:
         if interaction.response.is_done():
             await interaction.followup.send(content=content, embed=embed, ephemeral=ephemeral)
@@ -44,15 +34,7 @@ async def safe_send_interaction(
 
 
 async def safe_defer(interaction: discord.Interaction, ephemeral: bool = False) -> bool:
-    """Safely defer an interaction response.
-    
-    Args:
-        interaction: Discord interaction to defer
-        ephemeral: Whether the eventual response should be ephemeral
-        
-    Returns:
-        True if deferred successfully, False otherwise
-    """
+    """Safely defer an interaction response."""
     try:
         if not interaction.response.is_done():
             await interaction.response.defer(ephemeral=ephemeral)
@@ -72,17 +54,7 @@ async def safe_send_message(
     embed: discord.Embed = None,
     delete_after: float = None
 ) -> Optional[discord.Message]:
-    """Safely send a message to a channel, handling errors gracefully.
-    
-    Args:
-        channel: Channel to send to
-        content: Text content (optional)
-        embed: Embed object (optional)
-        delete_after: Seconds before auto-deletion (optional)
-        
-    Returns:
-        Message object if sent successfully, None otherwise
-    """
+    """Safely send a message to a channel, handling errors gracefully."""
     try:
         return await channel.send(content=content, embed=embed, delete_after=delete_after)
     except discord.Forbidden:

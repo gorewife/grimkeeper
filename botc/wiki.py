@@ -39,23 +39,15 @@ class CharacterInfo:
     def get_team_color(self) -> int:
         """Get Discord embed color based on team."""
         if self.team == "Good":
-            return 0x3498db  # Blue
+            return 0x3498db
         elif self.team == "Evil":
-            return 0xe74c3c  # Red
+            return 0xe74c3c
         else:
-            return 0x95a5a6  # Gray for neutral/traveller
+            return 0x95a5a6
 
 
 async def fetch_character(character_name: str) -> Optional[CharacterInfo]:
-    """Fetch character information from the BOTC wiki.
-    
-    Args:
-        character_name: Name of the character to look up
-        
-    Returns:
-        CharacterInfo object if found, None otherwise
-    """
-    # Normalize character name to title case for better matching
+    """Fetch character information from the BOTC wiki."""
     character_name = character_name.strip().title()
     
     try:
@@ -76,7 +68,6 @@ async def fetch_character(character_name: str) -> Optional[CharacterInfo]:
                 
                 data = await response.json()
                 
-                # Check if page exists
                 if "error" in data:
                     logger.debug(f"Character not found: {character_name}")
                     return None
@@ -85,11 +76,9 @@ async def fetch_character(character_name: str) -> Optional[CharacterInfo]:
                 html_content = parse_data.get("text", {}).get("*", "")
                 page_title_raw = parse_data.get("displaytitle", character_name)
                 
-                # Strip HTML tags from title (e.g., <span class="mw-page-title-main">Fortune Teller</span>)
                 title_soup = BeautifulSoup(page_title_raw, 'html.parser')
                 page_title = title_soup.get_text(strip=True)
                 
-                # Parse the HTML content
                 char_info = _parse_character_html(html_content, page_title)
                 
                 if char_info:
@@ -107,15 +96,7 @@ async def fetch_character(character_name: str) -> Optional[CharacterInfo]:
 
 
 def _parse_character_html(html: str, title: str) -> Optional[CharacterInfo]:
-    """Parse character information from wiki HTML.
-    
-    Args:
-        html: HTML content from the wiki
-        title: Page title
-        
-    Returns:
-        CharacterInfo object with parsed data
-    """
+    """Parse character information from wiki HTML."""
     soup = BeautifulSoup(html, 'html.parser')
     char_info = CharacterInfo()
     
@@ -141,17 +122,13 @@ def _parse_character_html(html: str, title: str) -> Optional[CharacterInfo]:
                     elif value == "Fabled":
                         char_info.team = "Neutral"
     
-    # Extract character icon - try multiple strategies
     icon_img = None
     
-    # Strategy 1: Look for img with 'icon_' in src
     icon_img = soup.find('img', src=re.compile(r'icon_', re.IGNORECASE))
     
-    # Strategy 2: Look for img with 'Icon' in src (capital I)
     if not icon_img:
         icon_img = soup.find('img', src=re.compile(r'Icon', re.IGNORECASE))
     
-    # Strategy 3: Look for the first image in character-details div
     if not icon_img:
         details_div = soup.find('div', id='character-details')
         if details_div:

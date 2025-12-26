@@ -18,15 +18,10 @@ logger = logging.getLogger('botc_bot')
 
 
 async def _end_poll(delay_seconds: int, poll_message: discord.Message, options: List[str], emoji_map: Dict[str, str], script_map: Dict[str, str], creator_id: int) -> None:
-    """Wait for poll to finish, then announce results.
-
-    Kept largely identical to the original implementation.
-    """
+    """Wait for poll to finish, then announce results."""
     try:
-        # Sleep until poll end
         await asyncio.sleep(delay_seconds)
 
-        # Refresh message to get current reactions
         channel = poll_message.channel
         guild = channel.guild
         try:
@@ -35,24 +30,18 @@ async def _end_poll(delay_seconds: int, poll_message: discord.Message, options: 
             logger.info(f"Poll message was deleted before results could be announced: {e}")
             return
 
-        # Get poll creator to mention
         creator = guild.get_member(creator_id)
         creator_mention = creator.mention if creator else ""
 
-        # Count votes for each option
         vote_counts = {}
         for opt in options:
             emoji = emoji_map[opt]
-            # Find the reaction matching our emoji
             for reaction in poll_message.reactions:
                 if str(reaction.emoji) == emoji:
-                    # Subtract 1 to exclude the bot's own reaction
                     vote_counts[opt] = reaction.count - 1
                     break
             else:
                 vote_counts[opt] = 0
-
-        # Find winner(s)
         if not vote_counts or max(vote_counts.values()) == 0:
             result_embed = discord.Embed(
                 title="Poll Ended",
@@ -109,10 +98,7 @@ async def create_poll_internal(
     creator: discord.Member,
     get_active_players: Callable[[discord.Guild], Awaitable[list]]
 ) -> Tuple[discord.Message, list, dict, dict, int]:
-    """Shared poll creation logic.
-
-    get_active_players must be provided to avoid circular imports with main.py.
-    """
+    """Shared poll creation logic."""
     options = options.lower().strip()
     if not all(char in POLL_VALID_OPTIONS for char in options):
         raise ValueError("❌ Invalid poll options. Please use only: **1** (Trouble Brewing), **2** (Sects & Violets), **3** (Bad Moon Rising), **c** (Custom), **h** (Homebrew)")
@@ -120,7 +106,6 @@ async def create_poll_internal(
     if not options:
         raise ValueError("Please include at least one option (1, 2, 3, c, h)")
 
-    # Parse duration
     poll_duration = parse_duration(duration_str)
     if poll_duration <= 0:
         raise ValueError("❌ Poll duration must be positive. Use formats like `5m`, `1h`, `30s`, `1h30m`, or `1:30`.")

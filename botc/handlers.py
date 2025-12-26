@@ -51,23 +51,13 @@ async def start_game_handler(
     script: object,
     custom_name: str = ""
 ) -> None:
-    """Handle /startgame command.
-    
-    Args:
-        interaction: Discord interaction
-        bot: Bot instance (for helper functions)
-        db: Database instance
-        script: Script choice from slash command
-        custom_name: Custom script name if applicable
-    """
+    """Handle /startgame command."""
     try:
         guild = interaction.guild
         member = interaction.user
         
-        # Get script value
         script_value = script.value if hasattr(script, "value") else str(script)
         
-        # Validate custom_name requirement for Custom Script
         if script_value == "Custom Script" and not custom_name.strip():
             await safe_send_interaction(
                 interaction,
@@ -76,7 +66,6 @@ async def start_game_handler(
             )
             return
         
-        # Determine display name
         if script_value in ["Custom Script", "Homebrew Script"] and custom_name.strip():
             display_name = custom_name.strip()
         else:
@@ -84,13 +73,10 @@ async def start_game_handler(
         
         guild_id = guild.id
         
-        # Get session context from the channel where command was run
         botc_category = None
         if interaction.channel and interaction.channel.category:
-            # Command run from within a category - use that category
             botc_category = interaction.channel.category
         else:
-            # Command run from outside a category - try to get default BOTC category
             guild_config = await db.get_guild(guild_id)
             if guild_config and guild_config.get("botc_category_id"):
                 botc_category = await bot.get_botc_category(guild, bot.db)
@@ -105,7 +91,6 @@ async def start_game_handler(
             )
             return
         
-        # Collect current players
         players = []
         player_ids = []
         main_st = None
