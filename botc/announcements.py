@@ -200,12 +200,15 @@ class AnnouncementProcessor:
         embed.add_field(name="\u200b", value="\u200b", inline=True)
         
         if players_list and len(players_list) <= 25:
-            players_text = ", ".join(players_list)
-            embed.add_field(
-                name=f"{EMOJI_CANDLE} Gathered in the Square",
-                value=players_text,
-                inline=False
-            )
+            # Filter out None/null values from player list
+            valid_players = [p for p in players_list if p]
+            if valid_players:
+                players_text = ", ".join(valid_players)
+                embed.add_field(
+                    name=f"{EMOJI_CANDLE} Gathered in the Square",
+                    value=players_text,
+                    inline=False
+                )
         
         # Add session code
         if session and session.session_code:
