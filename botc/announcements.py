@@ -91,24 +91,20 @@ class AnnouncementProcessor:
         ann_type = announcement['announcement_type']
         game_id = announcement['game_id']
         
-        # Get guild
         guild = self.bot.get_guild(guild_id)
         if not guild:
             logger.warning(f"Guild {guild_id} not found for announcement")
             return
         
-        # Get session and announce channel
         session = None
         if category_id:
             session = await self.session_manager.get_session(guild_id, category_id)
         
-        # Get announce channel
         announce_channel = await self._get_announce_channel(guild, session, category_id)
         if not announce_channel:
             logger.warning(f"No announce channel found for guild {guild_id}, category {category_id}")
             return
         
-        # Get game data
         async with self.db.pool.acquire() as conn:
             game = await conn.fetchrow(
                 "SELECT * FROM games WHERE game_id = $1",
