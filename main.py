@@ -87,7 +87,14 @@ settings = get_settings()
 token = settings.discord_token
 database_url = settings.database_url
 
-logging.basicConfig(level=logging.INFO, filename='discord.log', encoding='utf-8', filemode='a')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('discord.log', encoding='utf-8', mode='a'),
+        logging.StreamHandler()
+    ]
+)
 logger = logging.getLogger('botc_bot')
 
 intents = discord.Intents.default()
