@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger('botc_bot')
 
-GRIMLIVE_API_URL = "https://api.hystericca.dev/api"
+GRIMLIVE_API_URL = "https://api.hystericca.dev"
 
 
 class TimerManager:
