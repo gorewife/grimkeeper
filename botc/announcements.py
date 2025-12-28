@@ -84,16 +84,29 @@ class AnnouncementProcessor:
     
     async def _process_announcement(self, announcement):
         """Process a single announcement by reusing existing handler functions."""
-        from botc.handlers import start_game_handler, end_game_handler
+        from botc.handlers import start_game_handler, end_game_handler, mute_from_website, unmute_from_website
         
         guild_id = announcement['guild_id']
         category_id = announcement['category_id']
         ann_type = announcement['announcement_type']
-        game_id = announcement['game_id']
+        game_id = announcement.get('game_id')
         
         guild = self.bot.get_guild(guild_id)
         if not guild:
             logger.warning(f"Guild {guild_id} not found for announcement")
+            return
+        
+        # Handle mute/unmute announcements (no game_id needed)
+        if ann_type == 'mute':
+            await mute_from_website(guild_id, category_id, self.bot, self.db)
+            return
+        elif ann_type == 'unmute':
+            await unmute_from_website(guild_id, category_id, self.bot, self.db)
+            return
+        
+        # Game-related announcements require game_id
+        if not game_id:
+            logger.warning(f"No game_id provided for {ann_type} announcement")
             return
         
         session = None

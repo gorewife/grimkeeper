@@ -496,3 +496,145 @@ async def end_game_handler(
             "❌ Failed to end game. See logs.",
             ephemeral=True
         )
+
+
+async def mute_from_website(guild_id: int, category_id: int, bot, db: 'Database') -> None:
+    """Handle mute command triggered from website.
+    
+    Mutes all players (excludes storytellers) in voice channels within the category.
+    Posts announcement to Discord category.
+    """
+    try:
+        guild = bot.get_guild(guild_id)
+        if not guild:
+            logger.warning(f"Guild {guild_id} not found for mute")
+            return
+        
+        category = guild.get_channel(category_id)
+        if not category or not isinstance(category, discord.CategoryChannel):
+            logger.warning(f"Category {category_id} not found in guild {guild_id}")
+            return
+        
+        # Get announcement channel
+        session = await bot.session_manager.get_session(guild_id, category_id)
+        if not session:
+            logger.warning(f"No session found for guild {guild_id}, category {category_id}")
+            return
+        
+        announce_channel = None
+        if session.announce_channel_id:
+            announce_channel = guild.get_channel(session.announce_channel_id)
+        
+        if not announce_channel:
+            # Fallback to first text channel in category
+            for channel in category.text_channels:
+                if channel.permissions_for(guild.me).send_messages:
+                    announce_channel = channel
+                    break
+        
+        if not announce_channel:
+            logger.warning(f"No announcement channel found for mute in category {category_id}")
+            return
+        
+        # Check bot permissions
+        bot_member = guild.get_member(bot.user.id)
+        if not bot_member.guild_permissions.mute_members:
+            await announce_channel.send("❌ Bot lacks 'Mute Members' permission.")
+            return
+        
+        # Mute players (exclude storytellers and bots)
+        muted_count = 0
+        for voice_channel in category.voice_channels:
+            for member in voice_channel.members:
+                if member.bot or bot.is_storyteller(member):
+                    continue
+                if member.voice and member.voice.mute:
+                    continue
+                
+                try:
+                    await member.edit(mute=True)
+                    muted_count += 1
+                except discord.HTTPException as e:
+                    logger.warning(f"Failed to mute {member.display_name}: {e}")
+                except Exception as e:
+                    logger.error(f"Unexpected error muting {member.display_name}: {e}")
+        
+        # Send announcement
+        if muted_count > 0:
+            await announce_channel.send(f"🔇 Muted {muted_count} player{'s' if muted_count != 1 else ''} (from website)")
+        else:
+            await announce_channel.send("🔇 No players to mute (all either storytellers or already muted)")
+        
+    except Exception as e:
+        logger.exception(f"Error in mute_from_website: {e}")
+
+
+async def unmute_from_website(guild_id: int, category_id: int, bot, db: 'Database') -> None:
+    """Handle unmute command triggered from website.
+    
+    Unmutes all players in voice channels within the category.
+    Posts announcement to Discord category.
+    """
+    try:
+        guild = bot.get_guild(guild_id)
+        if not guild:
+            logger.warning(f"Guild {guild_id} not found for unmute")
+            return
+        
+        category = guild.get_channel(category_id)
+        if not category or not isinstance(category, discord.CategoryChannel):
+            logger.warning(f"Category {category_id} not found in guild {guild_id}")
+            return
+        
+        # Get announcement channel
+        session = await bot.session_manager.get_session(guild_id, category_id)
+        if not session:
+            logger.warning(f"No session found for guild {guild_id}, category {category_id}")
+            return
+        
+        announce_channel = None
+        if session.announce_channel_id:
+            announce_channel = guild.get_channel(session.announce_channel_id)
+        
+        if not announce_channel:
+            # Fallback to first text channel in category
+            for channel in category.text_channels:
+                if channel.permissions_for(guild.me).send_messages:
+                    announce_channel = channel
+                    break
+        
+        if not announce_channel:
+            logger.warning(f"No announcement channel found for unmute in category {category_id}")
+            return
+        
+        # Check bot permissions
+        bot_member = guild.get_member(bot.user.id)
+        if not bot_member.guild_permissions.mute_members:
+            await announce_channel.send("❌ Bot lacks 'Mute Members' permission.")
+            return
+        
+        # Unmute all players (including storytellers this time)
+        unmuted_count = 0
+        for voice_channel in category.voice_channels:
+            for member in voice_channel.members:
+                if member.bot:
+                    continue
+                if member.voice and not member.voice.mute:
+                    continue
+                
+                try:
+                    await member.edit(mute=False)
+                    unmuted_count += 1
+                except discord.HTTPException as e:
+                    logger.warning(f"Failed to unmute {member.display_name}: {e}")
+                except Exception as e:
+                    logger.error(f"Unexpected error unmuting {member.display_name}: {e}")
+        
+        # Send announcement
+        if unmuted_count > 0:
+            await announce_channel.send(f"🔊 Unmuted {unmuted_count} player{'s' if unmuted_count != 1 else ''} (from website)")
+        else:
+            await announce_channel.send("🔊 No players to unmute (all already unmuted)")
+        
+    except Exception as e:
+        logger.exception(f"Error in unmute_from_website: {e}")

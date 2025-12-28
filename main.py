@@ -117,7 +117,6 @@ async def get_active_players(guild: discord.Guild, channel: discord.TextChannel 
     active_player_mentions = []
     
     try:
-        # Get session from channel context
         botc_category = None
         if channel and bot.session_manager and channel.category:
             session = await bot.session_manager.get_session_from_channel(channel, channel.guild)
@@ -162,7 +161,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
     base_nick = current_nick
     active = {}
     
-    # Check permissions FIRST before doing anything
     guild = member.guild
     bot_member = guild.get_member(bot.user.id)
     
@@ -170,7 +168,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
         await send_temporary(channel, "⚠️ Bot configuration error. Please contact an admin.", delay=DELETE_DELAY_ERROR)
         return
     
-    # Check general permission
     if not bot_member.guild_permissions.manage_nicknames:
         await send_temporary(
             channel,
@@ -179,7 +176,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
         )
         return
     
-    # Discord does not allow bots to change the server owner's nickname at all
     if member.id == guild.owner_id:
         await send_temporary(
             channel,
@@ -189,7 +185,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
         )
         return
     
-    # Check role hierarchy for everyone else
     if member.top_role >= bot_member.top_role:
         await send_temporary(
             channel,
@@ -199,7 +194,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
         )
         return
     
-    # Parse existing prefixes
     for key, val in prefixes.items():
         active[key] = base_nick.startswith(val)
         if active[key]:
@@ -208,7 +202,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
     # Store old spectator state before toggling
     was_spectator = active.get("spe", False)
 
-    # Toggle the requested prefix
     if prefix_key in exclusive:
         for key in exclusive:
             if key != prefix_key:
@@ -221,7 +214,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
     # This handles: *! to toggle off, *st, or *cost (all remove spectator status)
     is_spectator_now = active.get("spe", False)
     if was_spectator and not is_spectator_now:
-        # Was spectator, no longer spectator - clean up any shadow following
         follower_id = member.id
         if follower_id in bot.follower_targets:
             await db.remove_follower(follower_id, member.guild.id)
@@ -233,7 +225,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
         guild = member.guild
         guild_id = guild.id
         
-        # Try to get session from channel context
         session = None
         if bot.session_manager and channel and channel.category:
             session = await bot.session_manager.get_session_from_channel(channel, channel.guild)
@@ -247,8 +238,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
             botc_category = channel.category
         
         if active["st"]:
-            # Becoming ST - update session ownership
-            # Update session with new storyteller
             if session and bot.session_manager:
                 session.storyteller_user_id = member.id
                 await bot.session_manager.update_session(session)
@@ -267,10 +256,8 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
                 for other_member in guild.members:
                     if other_member.id == member.id:
                         continue
-                    # Check if they have ST prefix and are in this category
                     if other_member.nick and other_member.nick.startswith(PREFIX_ST) and other_member.id in category_members:
                         try:
-                            # Remove ST prefix
                             new_other_nick = other_member.nick[len(PREFIX_ST):]
                             bot_initiated_nick_changes.add((other_member.id, new_other_nick))
                             await other_member.edit(nick=new_other_nick)
@@ -282,15 +269,12 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
                 session.grimoire_link = None
                 await bot.session_manager.update_session(session)
             else:
-                # Ensure guild record exists
                 await db.upsert_guild(guild_id)
         else:
-            # Removing ST - clear session ownership
             if session and bot.session_manager:
                 session.storyteller_user_id = None
                 await bot.session_manager.update_session(session)
 
-    # Build new nickname
     new_nick = ""
     if active.get("brb"):
         new_nick += PREFIX_BRB
@@ -302,13 +286,11 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
         new_nick += PREFIX_SPEC
     new_nick += base_nick
 
-    # Trim if too long
     if len(new_nick) > MAX_NICK_LENGTH:
         prefix_length = len(new_nick) - len(base_nick)
         max_base_length = MAX_NICK_LENGTH - prefix_length
         base_nick = base_nick[:max_base_length]
         
-        # Rebuild with trimmed base
         new_nick = ""
         if active.get("brb"):
             new_nick += PREFIX_BRB
@@ -320,7 +302,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
             new_nick += PREFIX_SPEC
         new_nick += base_nick
 
-    # Confirmation messages
     confirmation_messages = {
         "brb": f"{member.display_name} will be right back" if active.get("brb") else f"{member.display_name} is back",
         "cost": "You are now Co-Storyteller!" if active.get("cost") else "No longer Co-Storyteller.",
@@ -328,7 +309,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
     }
 
     try:
-        # Track this as a bot-initiated change
         bot_initiated_nick_changes.add((member.id, new_nick))
         
         await member.edit(nick=new_nick)
@@ -347,25 +327,20 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
 async def clean_followers(guild: discord.Guild) -> None:
     valid_ids = {m.id for m in guild.members}
     
-    # Clean follower_targets cache
     for follower_id in list(follower_targets.keys()):
         target_id = follower_targets[follower_id]
         if follower_id not in valid_ids or target_id not in valid_ids:
             follower_targets.pop(follower_id, None)
-            # Remove from database
             await db.remove_follower(follower_id, guild.id)
     
-    # Clean shadow followers from database
     all_followers = await db.get_all_followers_for_guild(guild.id)
     for target_id, follower_ids in all_followers.items():
         if target_id not in valid_ids:
-            # Remove all followers for this target
             for fid in follower_ids:
                 await db.remove_follower(fid, guild.id)
                 follower_targets.pop(fid, None)
             continue
         
-        # Remove invalid followers
         for fid in follower_ids:
             if fid not in valid_ids:
                 await db.remove_follower(fid, guild.id)
@@ -406,7 +381,6 @@ async def call_townspeople(guild: discord.Guild, category_id: Optional[int] = No
     if not category_id or not session_manager:
         raise ValueError("❌ This command must be used within a BOTC session category.")
     
-    # Get session for this category
     session = await session_manager.get_session(guild_id, category_id)
     if not session:
         raise ValueError("❌ No session found for this category. An admin should run `/setbotc` to create a session first.")
@@ -424,7 +398,6 @@ async def call_townspeople(guild: discord.Guild, category_id: Optional[int] = No
     if not botc_category:
         raise ValueError("❌ Could not find BOTC category. Please check the category configuration.")
 
-    # Check permissions
     can_move, _ = check_bot_permissions(guild)
     if not can_move:
         raise ValueError("Bot lacks 'Move Members' permission. Please grant this permission in Server Settings.")
@@ -432,26 +405,19 @@ async def call_townspeople(guild: discord.Guild, category_id: Optional[int] = No
     moved_count = 0
     failed_count = 0
     
-    # Get exception channel IDs once before the loop (already set above based on session or guild)
-    
-    # Collect all members to move
     members_to_move = []
     for channel in botc_category.voice_channels:
-        # If this channel is configured as an exception, skip it entirely
         if channel.id in exception_ids:
             continue
         for member in channel.members:
-            # Skip bots
             if member.bot:
                 continue
-            # If the member is already in the destination channel, skip moving them
             try:
                 if member.voice and member.voice.channel and dest_channel and member.voice.channel.id == dest_channel.id:
                     continue
             except AttributeError as e:
                 # If voice state is unexpectedly None, log and include member to be safe
                 logger.debug(f"Voice state check failed for {member.display_name}: {e}")
-            # Also skip members who are in any configured exception channels (safety check)
             try:
                 if member.voice and member.voice.channel and member.voice.channel.id in exception_ids:
                     continue
@@ -479,14 +445,12 @@ async def call_townspeople(guild: discord.Guild, category_id: Optional[int] = No
             return False
     
     if members_to_move:
-        # Process in batches
         for i in range(0, len(members_to_move), BATCH_SIZE):
             batch = members_to_move[i:i + BATCH_SIZE]
             results = await asyncio.gather(*[move_member(m) for m in batch])
             moved_count += sum(results)
             failed_count += len(results) - sum(results)
             
-            # Small delay between batches to respect rate limits
             if i + BATCH_SIZE < len(members_to_move):
                 await asyncio.sleep(BATCH_DELAY)
 
@@ -558,7 +522,6 @@ async def stats_handler(interaction: discord.Interaction) -> None:
     
     Shows total games played, win rates for Good/Evil, script breakdowns, and trends.
     """
-    # Rate limit check
     if not check_rate_limit(interaction.user.id, "stats", COMMAND_COOLDOWN_LONG):
         await interaction.response.send_message("⏳ Please wait before using /stats again.", ephemeral=True)
         return
@@ -587,7 +550,6 @@ async def stats_handler(interaction: discord.Interaction) -> None:
                 if game_id:
                     invalid_game_ids.append(game_id)
         
-        # Delete invalid games from database
         if invalid_game_ids:
             for game_id in invalid_game_ids:
                 try:
@@ -596,7 +558,6 @@ async def stats_handler(interaction: discord.Interaction) -> None:
                 except Exception as e:
                     logger.error(f"Failed to delete invalid game {game_id}: {e}")
         
-        # Use only valid games for stats
         history = valid_history
         
         if not history:
@@ -729,7 +690,6 @@ async def gamehistory_handler(interaction: discord.Interaction, limit: int = 50)
         interaction: Discord interaction
         limit: Maximum number of recent games to fetch (default: 50)
     """
-    # Rate limit check
     if not check_rate_limit(interaction.user.id, "gamehistory", COMMAND_COOLDOWN_LONG):
         await interaction.response.send_message("⏳ Please wait before using /gamehistory again.", ephemeral=True)
         return
@@ -752,7 +712,6 @@ async def gamehistory_handler(interaction: discord.Interaction, limit: int = 50)
             await interaction.response.send_message(f"No game history recorded for {scope_msg} yet.", ephemeral=True)
             return
         
-        # Build context description
         if category_id:
             category = guild.get_channel(category_id)
             category_name = category.name if category else f"Category {category_id}"
@@ -760,7 +719,6 @@ async def gamehistory_handler(interaction: discord.Interaction, limit: int = 50)
         else:
             context_desc = f"Server: **{guild.name}**"
         
-        # Create paginated view
         view = GameHistoryView(history, context_desc, guild)
         embed = view.create_embed()
         
@@ -886,7 +844,6 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
         interaction: Discord interaction
         user: Optional user to show stats for (defaults to guild leaderboard)
     """
-    # Rate limit check
     if not check_rate_limit(interaction.user.id, "storytellerstats", COMMAND_COOLDOWN_LONG):
         await interaction.response.send_message("⏳ Please wait before using this command again.", ephemeral=True)
         return
@@ -964,7 +921,6 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
                 if profile_text:
                     embed.description += "\n" + " • ".join(profile_text)
             
-            # Overall stats
             embed.add_field(
                 name=f"{EMOJI_STAR} Overall Performance",
                 value=(
@@ -976,7 +932,6 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
                 inline=False
             )
             
-            # Game metrics
             total_duration = stat.get('total_game_duration', 0) or 0
             total_players = stat.get('total_player_count', 0) or 0
             
@@ -998,7 +953,6 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
                     inline=False
                 )
             
-            # Script breakdown
             script_stats = []
             if stat['tb_games'] > 0:
                 tb_good_rate = (stat['tb_good_wins'] / stat['tb_games'] * 100)
@@ -1031,7 +985,6 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
                     inline=False
                 )
             
-            # Add most played script
             script_counts = [
                 ("Trouble Brewing", stat['tb_games']),
                 ("Sects & Violets", stat['snv_games']),
@@ -1045,7 +998,6 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
                     inline=True
                 )
             
-            # Add last game timestamp if available
             if stat.get('last_game_at'):
                 from datetime import datetime
                 last_game = stat['last_game_at']
@@ -1055,11 +1007,9 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
                     inline=True
                 )
             
-            # Generate stats card
             try:
                 from botc.card_generator import generate_stats_card
                 
-                # Calculate average duration and players
                 avg_duration_minutes = None
                 avg_players = None
                 if total > 0:
@@ -1086,20 +1036,16 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
                 )
                 
                 if card_buffer:
-                    # Send only the card image
                     card_file = discord.File(fp=card_buffer, filename=f"stats_{user.id}.png")
                     await interaction.followup.send(file=card_file)
                 else:
-                    # Fallback to embed only if card generation fails
                     await interaction.followup.send(embed=embed)
                     
             except Exception as e:
                 logger.warning(f"Failed to generate stats card: {e}")
-                # Fallback to embed only
                 await interaction.followup.send(embed=embed)
         
         else:
-            # Show all storytellers (leaderboard style)
             embed = discord.Embed(
                 title=f"{EMOJI_PEN} Storyteller Leaderboard",
                 description=f"Stats for all storytellers in **{guild.name}**",
@@ -1116,12 +1062,10 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
                     good_rate = (good / total * 100) if total > 0 else 0
                     evil_rate = (evil / total * 100) if total > 0 else 0
                     
-                    # Add medal for top 3
                     medal = {1: "🥇", 2: "🥈", 3: "🥉"}.get(idx, f"**{idx}.**")
                     
                     stats_text = f"**{total} games** • {EMOJI_GOOD} {good} ({good_rate:.0f}%) | {EMOJI_EVIL} {evil} ({evil_rate:.0f}%)\n"
                     
-                    # Show most played script
                     scripts = [("TB", stat['tb_games']), ("S&V", stat['snv_games']), ("BMR", stat['bmr_games'])]
                     top_script = max(scripts, key=lambda x: x[1])
                     if top_script[1] > 0:
@@ -1214,7 +1158,6 @@ async def clearhistory_handler(interaction: discord.Interaction) -> None:
             return
 
         guild_id = guild.id
-        # Fetch all game history to check if there's anything to clear
         history = await db.get_game_history(guild_id, limit=None)
         
         if not history:
@@ -1259,8 +1202,7 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
         
         status_msg = await interaction.followup.send("🕯️ Setting up your Blood on the Clocktower server...")
         
-        # Gothic color scheme
-        gothic_red = discord.Color.from_rgb(139, 0, 0)  # Dark red
+        gothic_red = discord.Color.from_rgb(139, 0, 0)
         
         # Check for existing BOTC categories to determine session number
         existing_botc_categories = [
@@ -1269,40 +1211,34 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
                cat.name.lower() in ["botc", "bot c", "blood on the clocktower"]
         ]
         
-        # Determine category name based on existing sessions
         if len(existing_botc_categories) == 0:
             category_name = "🩸• Blood on the Clocktower"
         else:
             category_name = f"🩸• Blood on the Clocktower - Session {len(existing_botc_categories) + 1}"
         
-        # Create BOTC Category
         botc_category = await guild.create_category(
             category_name,
             position=0
         )
         
-        # Create text channel for announcements
         announce_channel = await guild.create_text_channel(
             "📜┃announcements",
             category=botc_category,
             topic="Game updates, timer notifications, and bot announcements"
         )
         
-        # Create Consultation (private channel for storytellers - exception channel)
         consultation = await guild.create_voice_channel(
             "🕯️┃Consultation",
             category=botc_category,
-            user_limit=0  # No limit
+            user_limit=0
         )
         
-        # Create Town Square (main gathering voice channel)
         town_square = await guild.create_voice_channel(
             "🏛️┃Town Square",
             category=botc_category,
-            user_limit=0  # No limit
+            user_limit=0
         )
         
-        # Create private channels with caps
         private_2 = await guild.create_voice_channel(
             "🌙┃Private Chamber (2)",
             category=botc_category,
@@ -1315,14 +1251,12 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
             user_limit=3
         )
         
-        # Another open channel for flexibility
         commons = await guild.create_voice_channel(
             "🗡️┃Commons",
             category=botc_category,
             user_limit=0
         )
         
-        # Configure bot settings
         guild_id = guild.id
         
         # Create session for this category (don't update guild-wide botc_category_id if sessions already exist)
@@ -1333,7 +1267,6 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
                 botc_category_id=botc_category.id
             )
         
-        # Create session record for this category
         if session_manager:
             try:
                 await session_manager.create_session(
@@ -1481,9 +1414,7 @@ changelog_data = load_changelog()
 async def load_cogs():
     """Load all bot cogs."""
     try:
-        # Load event handlers first
         await bot.load_extension('botc.cogs.events')
-        # Load other cogs
         await bot.load_extension('botc.cogs.slash')
         await bot.load_extension('botc.cogs.polls')
         await bot.load_extension('botc.cogs.timers')
@@ -1514,7 +1445,6 @@ async def setup_hook():
     bot.announcement_processor = announcement_processor
     logger.info("Announcement processor initialized")
     
-    # Load all cogs
     await load_cogs()
 
 
@@ -1524,9 +1454,7 @@ async def setup_hook():
 async def on_command_error(ctx, error):
     """Handle command errors - suppress CommandNotFound for on_message handled commands."""
     if isinstance(error, commands.CommandNotFound):
-        # Silently ignore - these are handled in on_message listeners
         return
-    # Re-raise other errors
     raise error
 
 @bot.event
@@ -1541,32 +1469,22 @@ async def on_message(message):
     if not content:
         return
     
-    # Cache split result to avoid redundant splits
     content_words = content_lower.split()
     first_word = content_words[0] if content_words else ""
     
-    # Rate limiting check for commands
     if content_lower.startswith("*"):
         if not check_rate_limit(message.author.id, first_word or "*"):
-            # Silently ignore rate-limited commands
             return
 
-    # Delete command messages for cleaner chat
     if first_word in DELETABLE_COMMANDS:
         try:
             await message.delete(delay=DELETE_DELAY_QUICK)
         except discord.errors.Forbidden:
-            # Bot lacks permission to delete messages
             pass
         except Exception as e:
             logger.warning(f"Could not delete command message: {e}")
 
-    # All commands handled by cogs (Commands, Polls, Timers)
-    # Process commands to allow cogs to handle them
     await bot.process_commands(message)
-
-
-# are now in botc.cogs.events.EventHandlers
 
 
 if __name__ == "__main__":
