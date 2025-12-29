@@ -91,6 +91,8 @@ class AnnouncementProcessor:
         ann_type = announcement['announcement_type']
         game_id = announcement.get('game_id')
         
+        logger.info(f"Processing {ann_type} announcement: guild_id={guild_id}, category_id={category_id}, game_id={game_id}")
+        
         guild = self.bot.get_guild(guild_id)
         if not guild:
             logger.warning(f"Guild {guild_id} not found for announcement")
@@ -111,6 +113,7 @@ class AnnouncementProcessor:
         elif ann_type == 'call':
             from botc.handlers import call_from_website
             try:
+                logger.info(f"Calling townspeople from website: guild_id={guild_id}, category_id={category_id}")
                 moved_count, dest_channel = await call_from_website(guild, category_id)
                 # Get announce channel
                 session = None
@@ -205,10 +208,11 @@ class AnnouncementProcessor:
         # Start the actual timer (which will call townspeople when it expires)
         try:
             await timer_manager.start_timer(
+                seconds=duration,
                 guild=guild,
-                delay_seconds=duration,
-                creator_name="Website",
                 announce_channel=announce_channel,
+                creator=0,  # Website has no creator user ID
+                announce_msg=None,
                 category_id=category_id
             )
             logger.info(f"Started {duration}s timer from website for guild {guild.id}, will call townspeople on completion")
