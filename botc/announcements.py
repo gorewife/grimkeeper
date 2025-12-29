@@ -84,7 +84,7 @@ class AnnouncementProcessor:
     
     async def _process_announcement(self, announcement):
         """Process a single announcement by reusing existing handler functions."""
-        from botc.handlers import start_game_handler, end_game_handler, mute_from_website, unmute_from_website
+        from botc.handlers import start_game_handler, end_game_handler
         
         guild_id = announcement['guild_id']
         category_id = announcement['category_id']
@@ -98,10 +98,15 @@ class AnnouncementProcessor:
         
         # Handle mute/unmute announcements (no game_id needed)
         if ann_type == 'mute':
+            from botc.handlers import mute_from_website
             await mute_from_website(guild_id, category_id, self.bot, self.db)
             return
         elif ann_type == 'unmute':
+            from botc.handlers import unmute_from_website
             await unmute_from_website(guild_id, category_id, self.bot, self.db)
+            return
+        elif ann_type == 'timer_start':
+            await self._handle_timer_announcement(guild, category_id, announcement)
             return
         
         # Game-related announcements require game_id
@@ -134,6 +139,8 @@ class AnnouncementProcessor:
             embed = await self._create_game_start_embed_from_website(guild, game, session)
         elif ann_type == 'game_end':
             embed = await self._create_game_end_embed_from_website(guild, game, session)
+        elif ann_type == 'game_cancel':
+            embed = await self._create_game_cancel_embed_from_website(guild, game, session)
         else:
             logger.warning(f"Unknown announcement type: {ann_type}")
             return
@@ -142,8 +149,44 @@ class AnnouncementProcessor:
             await announce_channel.send(embed=embed)
             logger.info(f"Sent {ann_type} announcement for game {game_id} in guild {guild.id}")
     
+    async def _handle_timer_announcement(self, guild: discord.Guild, category_id: int, announcement):
+        """Handle timer start announcement."""
+        import json
+        
+        # Get announce channel
+        session = await self.session_manager.get_session(guild.id, category_id)
+        announce_channel = await self._get_announce_channel(guild, session, category_id)
+        
+        if not announce_channel:
+            logger.warning(f"No announce channel found for timer in guild {guild.id}, category {category_id}")
+            return
+        
+        # Parse duration from game_data
+        game_data = announcement.get('game_data')
+        if isinstance(game_data, str):
+            try:
+                game_data = json.loads(game_data)
+            except:
+                logger.error(f"Failed to parse game_data: {game_data}")
+                return
+        
+        duration = game_data.get('duration', 0)
+        minutes = duration // 60
+        seconds = duration % 60
+        
+        time_str = f"{minutes}m {seconds}s" if seconds > 0 else f"{minutes}m"
+        
+        embed = discord.Embed(
+            title="⏰ Timer Started",
+            description=f"A {time_str} timer has been started.",
+            color=discord.Color.blue()
+        )
+        
+        await announce_channel.send(embed=embed)
+        logger.info(f"Sent timer announcement for {duration}s in guild {guild.id}")
+    
     async def _get_announce_channel(self, guild: discord.Guild, session, category_id: int):
-        """Get the announcement channel for a session."""
+        """Get the announcement channel for a session.""
         if session and session.announce_channel_id:
             channel = guild.get_channel(session.announce_channel_id)
             if channel:
@@ -301,6 +344,40 @@ class AnnouncementProcessor:
         embed.add_field(name=f"**{EMOJI_CLOCK} Began**", value=f"<t:{start_timestamp}:t>", inline=True)
         
         footer_text = f"Grimkeeper v{VERSION} • Ended from website"
+        if session and session.session_code:
+            footer_text += f" • Session: {session.session_code}"
+        embed.set_footer(text=footer_text)
+        
+        return embed
+    
+    async def _create_game_cancel_embed_from_website(self, guild: discord.Guild, game, session):
+        """Create game cancel embed."""
+        from botc.constants import EMOJI_SCRIPT, EMOJI_PLAYERS, EMOJI_CLOCK, VERSION
+        
+        storyteller = None
+        if game.get('storyteller_id'):
+            storyteller = guild.get_member(game['storyteller_id'])
+        
+        st_name = storyteller.display_name if storyteller else "Unknown Storyteller"
+        script_name = game.get('custom_name') or game.get('script', 'Unknown Script')
+        script_display = script_name if script_name else "Custom Script"
+        
+        embed = discord.Embed(
+            title="📕 Game Canceled",
+            description="*The grimoire closes, the tale untold...*",
+            color=discord.Color.orange(),
+            timestamp=discord.utils.utcnow()
+        )
+        
+        embed.set_author(name=st_name, icon_url=storyteller.display_avatar.url if storyteller else None)
+        embed.add_field(name=f"**{EMOJI_SCRIPT} Script**", value=script_display, inline=True)
+        embed.add_field(name=f"**{EMOJI_PLAYERS} Players**", value=f"{game.get('player_count', 0)}", inline=True)
+        
+        if game.get('start_time'):
+            start_timestamp = int(game['start_time'])
+            embed.add_field(name=f"**{EMOJI_CLOCK} Started**", value=f"<t:{start_timestamp}:R>", inline=True)
+        
+        footer_text = f"Grimkeeper v{VERSION} • Canceled from website"
         if session and session.session_code:
             footer_text += f" • Session: {session.session_code}"
         embed.set_footer(text=footer_text)
