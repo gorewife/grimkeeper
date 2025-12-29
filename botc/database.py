@@ -428,6 +428,18 @@ class Database:
                     guild_id, row['game_id']
                 )
             
+            # Delete announcements first to avoid foreign key constraint violations
+            if category_id:
+                await conn.execute(
+                    "DELETE FROM announcements WHERE game_id IN (SELECT game_id FROM games WHERE guild_id = $1 AND category_id = $2 AND is_active = TRUE)",
+                    guild_id, category_id
+                )
+            else:
+                await conn.execute(
+                    "DELETE FROM announcements WHERE game_id IN (SELECT game_id FROM games WHERE guild_id = $1 AND is_active = TRUE)",
+                    guild_id
+                )
+            
             # Now delete the games
             if category_id:
                 await conn.execute(
