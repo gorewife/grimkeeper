@@ -22,18 +22,14 @@ class CleanupTask:
     async def cleanup_stale_shadows(self):
         """Remove shadow followers older than 24 hours."""
         try:
-            # Calculate timestamp for 24 hours ago
-            import time
-            twenty_four_hours_ago = int(time.time()) - (24 * 60 * 60)
-            
             async with self.db.pool.acquire() as conn:
+                # Use NOW() - INTERVAL to compare timestamps directly
                 result = await conn.execute(
                     """
                     DELETE FROM shadow_followers 
-                    WHERE created_at < $1
+                    WHERE created_at < EXTRACT(EPOCH FROM NOW() - INTERVAL '24 hours')::BIGINT
                     RETURNING follower_id, target_id, guild_id
-                    """,
-                    twenty_four_hours_ago
+                    """
                 )
                 
                 # Extract count from result string like "DELETE 5"
