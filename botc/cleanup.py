@@ -23,11 +23,11 @@ class CleanupTask:
         """Remove shadow followers older than 24 hours."""
         try:
             async with self.db.pool.acquire() as conn:
-                # Use NOW() - INTERVAL to compare timestamps directly
+                # Cast created_at to timestamp for comparison
                 result = await conn.execute(
                     """
                     DELETE FROM shadow_followers 
-                    WHERE created_at < EXTRACT(EPOCH FROM NOW() - INTERVAL '24 hours')::BIGINT
+                    WHERE created_at::timestamp < NOW() - INTERVAL '24 hours'
                     RETURNING follower_id, target_id, guild_id
                     """
                 )
