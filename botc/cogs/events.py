@@ -108,6 +108,11 @@ class EventHandlers(commands.Cog):
             self.bot.announcement_processor.start()
             logger.info("Started announcement processor")
         
+        # Start cleanup task for stale shadow followers
+        if hasattr(self.bot, 'cleanup_task') and self.bot.cleanup_task:
+            self.bot.cleanup_task.start()
+            logger.info("Started cleanup task")
+        
         # Restore persisted timers from before restart
         if self.bot.timer_manager:
             await self.bot.timer_manager.load_timers()

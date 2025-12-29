@@ -190,12 +190,13 @@ class Database:
     
     async def add_follower(self, follower_id: int, target_id: int, guild_id: int) -> None:
         """Add a shadow follower relationship."""
+        import time
         async with self.pool.acquire() as conn:
             await conn.execute(
-                """INSERT INTO shadow_followers (follower_id, target_id, guild_id)
-                   VALUES ($1, $2, $3)
-                   ON CONFLICT (follower_id, guild_id) DO UPDATE SET target_id = $2""",
-                follower_id, target_id, guild_id
+                """INSERT INTO shadow_followers (follower_id, target_id, guild_id, created_at)
+                   VALUES ($1, $2, $3, $4)
+                   ON CONFLICT (follower_id, guild_id) DO UPDATE SET target_id = $2, created_at = $4""",
+                follower_id, target_id, guild_id, int(time.time())
             )
     
     async def remove_follower(self, follower_id: int, guild_id: int) -> None:

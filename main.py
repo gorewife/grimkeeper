@@ -79,6 +79,7 @@ from botc.timers import TimerManager
 from botc.database import Database
 from botc.session import SessionManager
 from botc.announcements import AnnouncementProcessor
+from botc.cleanup import CleanupTask
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(dotenv_path=BASE_DIR / ".env")
@@ -1427,6 +1428,7 @@ async def load_cogs():
 
 session_manager: Optional[SessionManager] = None
 announcement_processor: Optional[AnnouncementProcessor] = None
+cleanup_task: Optional[CleanupTask] = None
 
 @bot.event
 async def setup_hook():
@@ -1434,7 +1436,7 @@ async def setup_hook():
     
     This runs before on_ready and is the proper place to load cogs.
     """
-    global session_manager, announcement_processor
+    global session_manager, announcement_processor, cleanup_task
     
     session_manager = SessionManager(db)
     bot.session_manager = session_manager
@@ -1444,6 +1446,11 @@ async def setup_hook():
     announcement_processor = AnnouncementProcessor(bot, db, session_manager)
     bot.announcement_processor = announcement_processor
     logger.info("Announcement processor initialized")
+    
+    # Initialize cleanup task
+    cleanup_task = CleanupTask(db)
+    bot.cleanup_task = cleanup_task
+    logger.info("Cleanup task initialized")
     
     await load_cogs()
 
