@@ -217,7 +217,7 @@ class TimerManager:
         """Sync timer start to grimlive API."""
         session_code = await self._get_session_code(guild_id, category_id)
         if session_code:
-            await self._call_grimlive_api('timer/start', {
+            await self._call_grimlive_api('api/timer/start', {
                 'sessionCode': session_code,
                 'duration': duration,
                 'discordUserId': creator
@@ -262,7 +262,7 @@ class TimerManager:
         """Sync timer pause to grimlive API."""
         session_code = await self._get_session_code(guild_id, category_id)
         if session_code:
-            await self._call_grimlive_api('timer/pause', {
+            await self._call_grimlive_api('api/timer/pause', {
                 'sessionCode': session_code
             })
 
@@ -311,7 +311,7 @@ class TimerManager:
         """Sync timer resume to grimlive API."""
         session_code = await self._get_session_code(guild_id, category_id)
         if session_code:
-            await self._call_grimlive_api('timer/resume', {
+            await self._call_grimlive_api('api/timer/resume', {
                 'sessionCode': session_code
             })
     
@@ -354,6 +354,6 @@ class TimerManager:
         """Sync timer stop to grimlive API."""
         session_code = await self._get_session_code(guild_id, category_id)
         if session_code:
-            await self._call_grimlive_api('timer/stop', {
+            await self._call_grimlive_api('api/timer/stop', {
                 'sessionCode': session_code
             })
