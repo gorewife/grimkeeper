@@ -84,25 +84,33 @@ class SessionManager:
         self._cache: dict[tuple[int, int], Session] = {}
     
     async def _generate_session_code(self, guild_id: int) -> str:
-        """Generate a unique session code for a guild.
+        """Generate a globally unique session code.
         
-        Format: s1, s2, s3... (simple sequential numbers per guild)
+        Format: s1, s2, s3... (simple sequential numbers globally unique)
         
         Args:
-            guild_id: Discord guild ID
+            guild_id: Discord guild ID (unused, kept for compatibility)
             
         Returns:
             Session code like "s1", "s2", etc.
         """
-        # Get existing sessions for this guild to find next number
-        existing_sessions = await self.db.get_all_sessions_for_guild(guild_id)
+        # Get ALL existing sessions across ALL guilds to find next number
+        result = await self.db.pool.fetchval(
+            "SELECT session_code FROM sessions WHERE session_code IS NOT NULL ORDER BY session_code"
+        )
+        
+        # Get all session codes
+        all_codes = await self.db.pool.fetch(
+            "SELECT session_code FROM sessions WHERE session_code ~ '^s[0-9]+$'"
+        )
         
         # Extract numbers from existing codes (e.g., "s1" -> 1, "s2" -> 2)
         existing_numbers = []
-        for session in existing_sessions:
-            if session.session_code and session.session_code.startswith('s'):
+        for row in all_codes:
+            code = row['session_code']
+            if code and code.startswith('s'):
                 try:
-                    num = int(session.session_code[1:])
+                    num = int(code[1:])
                     existing_numbers.append(num)
                 except ValueError:
                     pass
