@@ -54,7 +54,7 @@ SCRIPT_EMOJI_BMR = "🌙"
 ICON_GOOD = "https://wiki.bloodontheclocktower.com/images/1/12/Generic_townsfolk.png"
 ICON_EVIL = "https://wiki.bloodontheclocktower.com/images/5/52/Generic_demon.png"
 
-EMOJI_SECTS_AND_VIOLETS = "<:sects_and_violets:1443464419286401164>"
+EMOJI_SECTS_AND_VIOLETS = "<:sects_and_violets:1443464437309636618>"
 EMOJI_BAD_MOON_RISING = "<:bad_moon_rising:1443464418317963314>"
 EMOJI_TOWN_SQUARE = "<:town_square:1443463539397365981>"
 EMOJI_SWORD = "<:sword:1443463537879023676>"
