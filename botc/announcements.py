@@ -60,7 +60,7 @@ class AnnouncementProcessor:
             # Get pending announcements
             async with self.db.pool.acquire() as conn:
                 announcements = await conn.fetch(
-                    """SELECT id, guild_id, category_id, announcement_type, game_id
+                    """SELECT id, guild_id, category_id, announcement_type, game_id, game_data
                        FROM announcements 
                        WHERE processed = FALSE 
                        ORDER BY created_at ASC
@@ -186,7 +186,7 @@ class AnnouncementProcessor:
         logger.info(f"Sent timer announcement for {duration}s in guild {guild.id}")
     
     async def _get_announce_channel(self, guild: discord.Guild, session, category_id: int):
-        """Get the announcement channel for a session.""
+        """Get the announcement channel for a session."""
         if session and session.announce_channel_id:
             channel = guild.get_channel(session.announce_channel_id)
             if channel:

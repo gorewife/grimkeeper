@@ -546,8 +546,13 @@ async def mute_from_website(guild_id: int, category_id: int, bot, db: 'Database'
         muted_count = 0
         for voice_channel in category.voice_channels:
             for member in voice_channel.members:
-                if member.bot or bot.is_storyteller(member):
+                # Skip bots
+                if member.bot:
                     continue
+                # Skip storytellers (check for ST prefix)
+                if member.display_name.startswith(PREFIX_ST):
+                    continue
+                # Skip if already muted
                 if member.voice and member.voice.mute:
                     continue
                 
