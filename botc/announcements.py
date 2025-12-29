@@ -108,6 +108,30 @@ class AnnouncementProcessor:
         elif ann_type == 'timer_start':
             await self._handle_timer_announcement(guild, category_id, announcement)
             return
+        elif ann_type == 'call':
+            from botc.handlers import call_from_website
+            try:
+                moved_count, dest_channel = await call_from_website(guild, category_id)
+                # Get announce channel
+                session = None
+                if category_id:
+                    session = await self.session_manager.get_session(guild_id, category_id)
+                announce_channel = await self._get_announce_channel(guild, session, category_id)
+                if announce_channel:
+                    embed = discord.Embed(
+                        title="📣 Townspeople Called",
+                        color=discord.Color.gold()
+                    )
+                    embed.add_field(
+                        name=f"{moved_count} players moved",
+                        value=f"Everyone has been moved to {dest_channel.mention}",
+                        inline=False
+                    )
+                    embed.set_footer(text="Called from website")
+                    await announce_channel.send(embed=embed)
+            except ValueError as e:
+                logger.warning(f"Call failed: {e}")
+            return
         
         # Game-related announcements require game_id
         if not game_id:
@@ -150,7 +174,7 @@ class AnnouncementProcessor:
             logger.info(f"Sent {ann_type} announcement for game {game_id} in guild {guild.id}")
     
     async def _handle_timer_announcement(self, guild: discord.Guild, category_id: int, announcement):
-        """Handle timer start announcement."""
+        """Handle timer start announcement - actually starts a timer that will call townspeople."""
         import json
         
         # Get announce channel
@@ -171,19 +195,26 @@ class AnnouncementProcessor:
                 return
         
         duration = data.get('duration', 0)
-        minutes = duration // 60
-        seconds = duration % 60
         
-        time_str = f"{minutes}m {seconds}s" if seconds > 0 else f"{minutes}m"
+        # Get timer manager from bot
+        timer_manager = getattr(self.bot, 'timer_manager', None)
+        if not timer_manager:
+            logger.error("Timer manager not found on bot")
+            return
         
-        embed = discord.Embed(
-            title="⏰ Timer Started",
-            description=f"A {time_str} timer has been started.",
-            color=discord.Color.blue()
-        )
-        
-        await announce_channel.send(embed=embed)
-        logger.info(f"Sent timer announcement for {duration}s in guild {guild.id}")
+        # Start the actual timer (which will call townspeople when it expires)
+        try:
+            await timer_manager.start_timer(
+                guild=guild,
+                delay_seconds=duration,
+                creator_name="Website",
+                announce_channel=announce_channel,
+                category_id=category_id
+            )
+            logger.info(f"Started {duration}s timer from website for guild {guild.id}, will call townspeople on completion")
+        except Exception as e:
+            logger.exception(f"Failed to start timer from website: {e}")
+            await announce_channel.send(f"❌ Failed to start timer: {e}")
     
     async def _get_announce_channel(self, guild: discord.Guild, session, category_id: int):
         """Get the announcement channel for a session."""

@@ -44,6 +44,12 @@ from botc.utils import strip_st_prefix, add_script_emoji
 logger = logging.getLogger('botc_bot')
 
 
+async def call_from_website(guild: discord.Guild, category_id: int):
+    """Call townspeople from website trigger."""
+    import main
+    return await main.call_townspeople(guild, category_id)
+
+
 async def start_game_handler(
     interaction: discord.Interaction,
     bot,
