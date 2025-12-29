@@ -60,7 +60,7 @@ class AnnouncementProcessor:
             # Get pending announcements
             async with self.db.pool.acquire() as conn:
                 announcements = await conn.fetch(
-                    """SELECT id, guild_id, category_id, announcement_type, game_id, game_data
+                    """SELECT id, guild_id, category_id, announcement_type, game_id, data
                        FROM announcements 
                        WHERE processed = FALSE 
                        ORDER BY created_at ASC
@@ -161,16 +161,16 @@ class AnnouncementProcessor:
             logger.warning(f"No announce channel found for timer in guild {guild.id}, category {category_id}")
             return
         
-        # Parse duration from game_data
-        game_data = announcement.get('game_data')
-        if isinstance(game_data, str):
+        # Parse duration from data
+        data = announcement.get('data')
+        if isinstance(data, str):
             try:
-                game_data = json.loads(game_data)
+                data = json.loads(data)
             except:
-                logger.error(f"Failed to parse game_data: {game_data}")
+                logger.error(f"Failed to parse data: {data}")
                 return
         
-        duration = game_data.get('duration', 0)
+        duration = data.get('duration', 0)
         minutes = duration // 60
         seconds = duration % 60
         
