@@ -1405,7 +1405,7 @@ class SlashCog(commands.Cog):
                     return
                 
                 player_id = interaction.user.id
-                csv_buffer = await generate_player_csv(db, player_id, limit=limit)
+                csv_buffer = await generate_player_csv(db, self.bot, player_id, limit=limit)
                 
                 if not csv_buffer.getvalue().strip().split('\n')[1:]:  # Only header, no data
                     await interaction.followup.send("❌ No games found in your history.", ephemeral=True)
@@ -1457,7 +1457,7 @@ class SlashCog(commands.Cog):
                         return
                 
                 player_id = interaction.user.id
-                csv_buffer = await generate_player_csv(db, player_id, game_id)
+                csv_buffer = await generate_player_csv(db, self.bot, player_id, game_id)
                 
                 if not csv_buffer.getvalue().strip().split('\n')[1:]:  # Only header, no data
                     await interaction.followup.send(
@@ -1508,7 +1508,7 @@ class SlashCog(commands.Cog):
                         return
                 
                 # Generate CSVs for all players
-                exports = await generate_all_players_csvs(db, game_id)
+                exports = await generate_all_players_csvs(db, self.bot, game_id)
                 
                 if not exports:
                     await interaction.followup.send(f"❌ No players found in game #{game_id}.", ephemeral=True)

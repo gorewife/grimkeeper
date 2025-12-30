@@ -8,13 +8,15 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from botc.database import Database
+    import discord
 
 
-async def generate_player_csv(db: 'Database', player_discord_id: int, game_id: int = None, limit: int = None) -> io.StringIO:
+async def generate_player_csv(db: 'Database', bot: 'discord.Client', player_discord_id: int, game_id: int = None, limit: int = None) -> io.StringIO:
     """Generate CSV export for a player's games.
     
     Args:
         db: Database instance
+        bot: Discord bot instance for fetching user/guild names
         player_discord_id: Discord ID of the player
         game_id: Optional specific game ID. If None, exports all games.
         limit: Optional limit on number of games to export (most recent first)
@@ -109,7 +111,29 @@ async def generate_player_csv(db: 'Database', player_discord_id: int, game_id: i
     for row in rows:
         date = datetime.fromtimestamp(row['start_time']).strftime('%Y-%m-%d')
         script = row['script'] or 'Unknown Script'
-        storyteller = 'me' if row['storyteller_id'] == player_discord_id else 'Storyteller'
+        
+        # Get storyteller name
+        if row['storyteller_id'] == player_discord_id:
+            storyteller = 'me'
+        elif row['storyteller_id']:
+            try:
+                st_user = await bot.fetch_user(row['storyteller_id'])
+                storyteller = st_user.display_name if st_user else 'Unknown ST'
+            except:
+                storyteller = 'Unknown ST'
+        else:
+            storyteller = ''
+        
+        # Get guild name
+        guild_name = 'Discord'
+        if row['guild_id']:
+            try:
+                guild = bot.get_guild(row['guild_id'])
+                if guild:
+                    guild_name = guild.name
+            except:
+                pass
+        
         player_count = row['player_count'] or ''
         
         # Determine game result from player's perspective
@@ -139,7 +163,7 @@ async def generate_player_csv(db: 'Database', player_discord_id: int, game_id: i
             storyteller,
             'Online',
             '',  # Location (N/A for online)
-            'Discord',  # Community
+            guild_name,  # Community (Discord server name)
             player_count,
             '',  # Traveler count (not tracked)
             result,
@@ -156,11 +180,12 @@ async def generate_player_csv(db: 'Database', player_discord_id: int, game_id: i
     return output
 
 
-async def generate_all_players_csvs(db: 'Database', game_id: int) -> dict[int, io.StringIO]:
+async def generate_all_players_csvs(db: 'Database', bot: 'discord.Client', game_id: int) -> dict[int, io.StringIO]:
     """Generate CSV exports for all players in a game.
     
     Args:
         db: Database instance
+        bot: Discord bot instance for fetching user/guild names
         game_id: Game ID to export
     
     Returns:
@@ -176,6 +201,6 @@ async def generate_all_players_csvs(db: 'Database', game_id: int) -> dict[int, i
     exports = {}
     for player in players:
         discord_id = player['discord_id']
-        exports[discord_id] = await generate_player_csv(db, discord_id, game_id)
+        exports[discord_id] = await generate_player_csv(db, bot, discord_id, game_id)
     
     return exports
