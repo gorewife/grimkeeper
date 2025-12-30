@@ -32,7 +32,7 @@ async def generate_player_csv(db: 'Database', player_discord_id: int, game_id: i
                     g.storyteller_id,
                     g.guild_id,
                     g.player_count,
-                    g.winning_team,
+                    g.winner,
                     gp.starting_role_name,
                     gp.starting_team,
                     gp.final_role_name,
@@ -52,7 +52,7 @@ async def generate_player_csv(db: 'Database', player_discord_id: int, game_id: i
                     g.storyteller_id,
                     g.guild_id,
                     g.player_count,
-                    g.winning_team,
+                    g.winner,
                     gp.starting_role_name,
                     gp.starting_team,
                     gp.final_role_name,
@@ -98,11 +98,11 @@ async def generate_player_csv(db: 'Database', player_discord_id: int, game_id: i
         player_count = row['player_count'] or ''
         
         # Determine game result from player's perspective
-        winning_team = row['winning_team']
+        winner = row['winner']
         final_team = row['final_team'] or row['starting_team']
         
-        if winning_team and final_team:
-            result = 'win' if winning_team.lower() == final_team.lower() else 'loss'
+        if winner and final_team:
+            result = 'win' if winner.lower() == final_team.lower() else 'loss'
         else:
             result = ''
         
