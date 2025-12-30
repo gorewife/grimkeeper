@@ -1380,6 +1380,135 @@ class SlashCog(commands.Cog):
                     ephemeral=True
                 )
 
+        @app_commands.command(name="exportmygames", description="Export your complete game history as CSV")
+        @app_commands.describe(limit="Optional: limit to most recent N games (default: all games)")
+        async def exportmygames_slash(interaction: discord.Interaction, limit: int = None):
+            """Export all games for the requesting user."""
+            await interaction.response.defer(ephemeral=True)
+            
+            try:
+                from botc.csv_export import generate_player_csv
+                import discord
+                
+                db = getattr(self.bot, "db", None)
+                if not db:
+                    await interaction.followup.send("❌ Database not available.", ephemeral=True)
+                    return
+                
+                player_id = interaction.user.id
+                csv_buffer = await generate_player_csv(db, player_id, limit=limit)
+                
+                if not csv_buffer.getvalue().strip().split('\n')[1:]:  # Only header, no data
+                    await interaction.followup.send("❌ No games found in your history.", ephemeral=True)
+                    return
+                
+                # Create file and send
+                game_count = len(csv_buffer.getvalue().split('\n')) - 1
+                filename = f"botc_games_{interaction.user.name}.csv"
+                file = discord.File(fp=csv_buffer, filename=filename)
+                
+                limit_msg = f" (most recent {limit})" if limit else ""
+                await interaction.followup.send(
+                    f"📊 Here's your game history{limit_msg}! ({game_count} games)",
+                    file=file,
+                    ephemeral=True
+                )
+                
+            except Exception as e:
+                logger.exception("Error exporting games")
+                await interaction.followup.send(f"❌ Failed to export games: {e}", ephemeral=True)
+        
+        @app_commands.command(name="exportgame", description="Export a single game as CSV")
+        @app_commands.describe(game_id="The ID of the game to export")
+        async def exportgame_slash(interaction: discord.Interaction, game_id: int):
+            """Export a single game for the requesting user."""
+            await interaction.response.defer(ephemeral=True)
+            
+            try:
+                from botc.csv_export import generate_player_csv
+                import discord
+                
+                db = getattr(self.bot, "db", None)
+                if not db:
+                    await interaction.followup.send("❌ Database not available.", ephemeral=True)
+                    return
+                
+                player_id = interaction.user.id
+                csv_buffer = await generate_player_csv(db, player_id, game_id)
+                
+                if not csv_buffer.getvalue().strip().split('\n')[1:]:  # Only header, no data
+                    await interaction.followup.send(
+                        f"❌ Game #{game_id} not found or you weren't in that game.",
+                        ephemeral=True
+                    )
+                    return
+                
+                # Create file and send
+                filename = f"botc_game_{game_id}_{interaction.user.name}.csv"
+                file = discord.File(fp=csv_buffer, filename=filename)
+                
+                await interaction.followup.send(
+                    f"📊 Here's your export for game #{game_id}!",
+                    file=file,
+                    ephemeral=True
+                )
+                
+            except Exception as e:
+                logger.exception("Error exporting game")
+                await interaction.followup.send(f"❌ Failed to export game: {e}", ephemeral=True)
+        
+        @app_commands.command(name="exportallplayers", description="Export CSVs for all players in a game (Storyteller only)")
+        @app_commands.describe(game_id="The ID of the game to export")
+        async def exportallplayers_slash(interaction: discord.Interaction, game_id: int):
+            """Export individual CSVs for all players in a game (ST only)."""
+            await interaction.response.defer(ephemeral=True)
+            
+            try:
+                from botc.csv_export import generate_all_players_csvs
+                import discord
+                
+                # Check if user is storyteller
+                if not getattr(self.bot, "is_storyteller", lambda m: False)(interaction.user):
+                    await interaction.followup.send("❌ Only storytellers can export all players.", ephemeral=True)
+                    return
+                
+                db = getattr(self.bot, "db", None)
+                if not db:
+                    await interaction.followup.send("❌ Database not available.", ephemeral=True)
+                    return
+                
+                # Verify game exists
+                async with db.pool.acquire() as conn:
+                    game = await conn.fetchrow("SELECT game_id, storyteller_id FROM games WHERE game_id = $1", game_id)
+                    if not game:
+                        await interaction.followup.send(f"❌ Game #{game_id} not found.", ephemeral=True)
+                        return
+                
+                # Generate CSVs for all players
+                exports = await generate_all_players_csvs(db, game_id)
+                
+                if not exports:
+                    await interaction.followup.send(f"❌ No players found in game #{game_id}.", ephemeral=True)
+                    return
+                
+                # Send all CSVs as attachments
+                files = []
+                for discord_id, csv_buffer in exports.items():
+                    member = interaction.guild.get_member(discord_id)
+                    username = member.name if member else str(discord_id)
+                    filename = f"botc_game_{game_id}_{username}.csv"
+                    files.append(discord.File(fp=csv_buffer, filename=filename))
+                
+                await interaction.followup.send(
+                    f"📊 Here are CSV exports for all {len(exports)} players in game #{game_id}!",
+                    files=files,
+                    ephemeral=True
+                )
+                
+            except Exception as e:
+                logger.exception("Error exporting all players")
+                await interaction.followup.send(f"❌ Failed to export: {e}", ephemeral=True)
+
         # Add all created commands to the bot.tree
         for cmd in [
             poll_slash,
@@ -1403,6 +1532,9 @@ class SlashCog(commands.Cog):
             deletesession_slash,
             language_slash,
             setadmin_slash,
+            exportmygames_slash,
+            exportgame_slash,
+            exportallplayers_slash,
         ]:
             try:
                 self.bot.tree.add_command(cmd)
