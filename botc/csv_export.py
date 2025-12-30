@@ -24,7 +24,7 @@ async def generate_player_csv(db: 'Database', player_discord_id: int, game_id: i
     """
     async with db.pool.acquire() as conn:
         if game_id:
-            # Single game export
+            # Single game export - try game_players first, then fall back to games.players for legacy games
             query = """
                 SELECT 
                     g.start_time,
@@ -38,13 +38,26 @@ async def generate_player_csv(db: 'Database', player_discord_id: int, game_id: i
                     gp.final_role_name,
                     gp.final_team
                 FROM games g
-                JOIN game_players gp ON g.game_id = gp.game_id
-                WHERE g.game_id = $1 AND gp.discord_id = $2
+                LEFT JOIN game_players gp ON g.game_id = gp.game_id AND gp.discord_id = $2
+                WHERE g.game_id = $1
                 ORDER BY g.start_time DESC
             """
             rows = await conn.fetch(query, game_id, player_discord_id)
+            
+            # For legacy games without game_players entries, check if player was in the game
+            if rows and not rows[0]['starting_role_name']:
+                game = rows[0]
+                players_json = await conn.fetchval(
+                    "SELECT players FROM games WHERE game_id = $1",
+                    game_id
+                )
+                if players_json:
+                    import json
+                    players = json.loads(players_json) if isinstance(players_json, str) else players_json
+                    if player_discord_id not in players:
+                        rows = []  # Player wasn't in this game
         else:
-            # All games export
+            # All games export - include both game_players entries and legacy games
             query = """
                 SELECT 
                     g.start_time,
@@ -53,13 +66,15 @@ async def generate_player_csv(db: 'Database', player_discord_id: int, game_id: i
                     g.guild_id,
                     g.player_count,
                     g.winner,
+                    g.players,
                     gp.starting_role_name,
                     gp.starting_team,
                     gp.final_role_name,
                     gp.final_team
                 FROM games g
-                JOIN game_players gp ON g.game_id = gp.game_id
-                WHERE gp.discord_id = $1
+                LEFT JOIN game_players gp ON g.game_id = gp.game_id AND gp.discord_id = $1
+                WHERE (gp.discord_id = $1 OR (g.players IS NOT NULL AND g.players::jsonb @> to_jsonb($1::bigint)))
+                AND g.is_active = FALSE
                 ORDER BY g.start_time DESC
             """
             if limit:

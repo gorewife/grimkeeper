@@ -1442,12 +1442,26 @@ class SlashCog(commands.Cog):
                     await interaction.followup.send("❌ Database not available.", ephemeral=True)
                     return
                 
+                # Check if game exists first
+                async with db.pool.acquire() as conn:
+                    game_exists = await conn.fetchval(
+                        "SELECT EXISTS(SELECT 1 FROM games WHERE game_id = $1 AND guild_id = $2)",
+                        game_id, interaction.guild_id
+                    )
+                    
+                    if not game_exists:
+                        await interaction.followup.send(
+                            f"❌ Game #{game_id} not found in this server.",
+                            ephemeral=True
+                        )
+                        return
+                
                 player_id = interaction.user.id
                 csv_buffer = await generate_player_csv(db, player_id, game_id)
                 
                 if not csv_buffer.getvalue().strip().split('\n')[1:]:  # Only header, no data
                     await interaction.followup.send(
-                        f"❌ Game #{game_id} not found or you weren't in that game.",
+                        f"❌ You weren't a player in game #{game_id}.",
                         ephemeral=True
                     )
                     return
