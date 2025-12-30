@@ -68,16 +68,34 @@ class AnnouncementProcessor:
                 )
                 
                 for announcement in announcements:
+                    announcement_id = announcement['id']
                     try:
-                        await self._process_announcement(announcement)
+                        # Set a timeout for processing each announcement
+                        await asyncio.wait_for(
+                            self._process_announcement(announcement),
+                            timeout=10.0  # 10 second timeout per announcement
+                        )
                         
-                        # Mark as processed
+                        # Mark as processed on success
                         await conn.execute(
                             "UPDATE announcements SET processed = TRUE, processed_at = $1 WHERE id = $2",
-                            int(time.time()), announcement['id']
+                            int(time.time()), announcement_id
                         )
-                    except Exception:
-                        logger.exception(f"Error processing announcement {announcement['id']}")
+                        logger.info(f"Successfully processed announcement {announcement_id}")
+                    except asyncio.TimeoutError:
+                        logger.error(f"Announcement {announcement_id} timed out after 10s, marking as processed to skip")
+                        # Mark as processed to prevent blocking queue
+                        await conn.execute(
+                            "UPDATE announcements SET processed = TRUE, processed_at = $1 WHERE id = $2",
+                            int(time.time()), announcement_id
+                        )
+                    except Exception as e:
+                        logger.exception(f"Error processing announcement {announcement_id}: {e}")
+                        # Mark as processed to prevent blocking queue
+                        await conn.execute(
+                            "UPDATE announcements SET processed = TRUE, processed_at = $1 WHERE id = $2",
+                            int(time.time()), announcement_id
+                        )
         
         except Exception:
             logger.exception("Error fetching pending announcements")
@@ -109,6 +127,9 @@ class AnnouncementProcessor:
             return
         elif ann_type == 'timer_start':
             await self._handle_timer_announcement(guild, category_id, announcement)
+            return
+        elif ann_type == 'timer_cancel':
+            await self._handle_timer_cancel(guild, category_id)
             return
         elif ann_type == 'call':
             from botc.handlers import call_from_website
@@ -177,7 +198,7 @@ class AnnouncementProcessor:
             logger.info(f"Sent {ann_type} announcement for game {game_id} in guild {guild.id}")
     
     async def _handle_timer_announcement(self, guild: discord.Guild, category_id: int, announcement):
-        """Handle timer start announcement - actually starts a timer that will call townspeople."""
+        """Handle timer start announcement - starts timer and announces it immediately."""
         import json
         
         # Get announce channel
@@ -205,6 +226,23 @@ class AnnouncementProcessor:
             logger.error("Timer manager not found on bot")
             return
         
+        # Send announcement BEFORE starting timer
+        minutes = duration // 60
+        seconds = duration % 60
+        time_str = f"{minutes}m {seconds}s" if minutes > 0 else f"{seconds}s"
+        
+        embed = discord.Embed(
+            title="⏱️ Timer Started",
+            description=f"Timer set for **{time_str}**. Townspeople will be called when time expires.",
+            color=discord.Color.blue()
+        )
+        embed.set_footer(text="Started from website")
+        
+        try:
+            await announce_channel.send(embed=embed)
+        except Exception as e:
+            logger.error(f"Failed to send timer start announcement: {e}")
+        
         # Start the actual timer (which will call townspeople when it expires)
         try:
             await timer_manager.start_timer(
@@ -219,6 +257,36 @@ class AnnouncementProcessor:
         except Exception as e:
             logger.exception(f"Failed to start timer from website: {e}")
             await announce_channel.send(f"❌ Failed to start timer: {e}")
+    
+    async def _handle_timer_cancel(self, guild: discord.Guild, category_id: int):
+        """Handle timer cancellation from website - cancels timer and announces immediately."""
+        timer_manager = getattr(self.bot, 'timer_manager', None)
+        if not timer_manager:
+            logger.error("Timer manager not found on bot")
+            return
+        
+        # Stop the timer
+        success, message = timer_manager.stop_timer(guild.id)
+        logger.info(f"Timer cancel from website: {message}")
+        
+        # Send cancellation announcement
+        session = await self.session_manager.get_session(guild.id, category_id)
+        announce_channel = await self._get_announce_channel(guild, session, category_id)
+        
+        if announce_channel:
+            if success:
+                embed = discord.Embed(
+                    title="⏱️ Timer Cancelled",
+                    description="The timer has been stopped.",
+                    color=discord.Color.orange()
+                )
+                embed.set_footer(text="Cancelled from website")
+                try:
+                    await announce_channel.send(embed=embed)
+                except Exception as e:
+                    logger.error(f"Failed to send timer cancel announcement: {e}")
+            else:
+                logger.info(f"No active timer to cancel for guild {guild.id}")
     
     async def _get_announce_channel(self, guild: discord.Guild, session, category_id: int):
         """Get the announcement channel for a session."""
