@@ -639,6 +639,12 @@ class Database:
                 guild_id, game_id
             )
             
+            # Delete announcements first (foreign key constraint)
+            await conn.execute(
+                "DELETE FROM announcements WHERE game_id = $1",
+                game_id
+            )
+            
             # Delete the game
             result = await conn.execute(
                 "DELETE FROM games WHERE game_id = $1 AND guild_id = $2",
@@ -689,6 +695,47 @@ class Database:
                 guild_id
             )
             # Parse "DELETE N" response
+            return int(result.split()[-1]) if result else 0
+    
+    async def delete_short_games(self, guild_id: int, max_duration_minutes: int) -> int:
+        """Delete games shorter than specified duration. Returns count of deleted games."""
+        max_duration_seconds = max_duration_minutes * 60
+        
+        async with self.pool.acquire() as conn:
+            # Get game IDs to delete
+            games_to_delete = await conn.fetch(
+                """SELECT game_id FROM games 
+                   WHERE guild_id = $1 
+                   AND is_active = FALSE
+                   AND end_time IS NOT NULL
+                   AND start_time IS NOT NULL
+                   AND (end_time - start_time) < $2""",
+                guild_id, max_duration_seconds
+            )
+            
+            if not games_to_delete:
+                return 0
+            
+            game_ids = [game['game_id'] for game in games_to_delete]
+            
+            # Clear active_game_id from any sessions referencing these games
+            await conn.execute(
+                "UPDATE sessions SET active_game_id = NULL WHERE guild_id = $1 AND active_game_id = ANY($2)",
+                guild_id, game_ids
+            )
+            
+            # Delete announcements for these games
+            await conn.execute(
+                "DELETE FROM announcements WHERE game_id = ANY($1)",
+                game_ids
+            )
+            
+            # Delete the games
+            result = await conn.execute(
+                "DELETE FROM games WHERE game_id = ANY($1)",
+                game_ids
+            )
+            
             return int(result.split()[-1]) if result else 0
     
     # Storyteller stats operations

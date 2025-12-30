@@ -719,6 +719,15 @@ class SlashCog(commands.Cog):
             except AttributeError:
                 await interaction.response.send_message("Clearhistory handler not available.", ephemeral=True)
         
+        # /deleteshortgames
+        @app_commands.command(name="deleteshortgames", description="Delete games shorter than specified duration (Admin only)")
+        @app_commands.describe(minutes="Delete games shorter than this many minutes")
+        async def deleteshortgames_slash(interaction: discord.Interaction, minutes: int):
+            try:
+                await getattr(self.bot, "deleteshortgames_handler")(interaction, minutes)
+            except AttributeError:
+                await interaction.response.send_message("Deleteshortgames handler not available.", ephemeral=True)
+        
         # /ststats (renamed from storytellerstats)
         @app_commands.command(name="ststats", description="View storyteller statistics (optionally for a specific user)")
         @app_commands.describe(user="User to view stats for (leave empty for all storytellers)")
@@ -1519,6 +1528,7 @@ class SlashCog(commands.Cog):
             gamehistory_slash,
             deletegame_slash,
             clearhistory_slash,
+            deleteshortgames_slash,
             ststats_slash,
             stprofile_slash,
             autosetup_slash,

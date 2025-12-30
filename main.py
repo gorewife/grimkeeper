@@ -1182,6 +1182,40 @@ bot.deletegame_handler = deletegame_handler
 bot.clearhistory_handler = clearhistory_handler
 
 
+async def deleteshortgames_handler(interaction: discord.Interaction, minutes: int) -> None:
+    """Delete games shorter than specified duration (Admin only)."""
+    try:
+        guild = interaction.guild
+        member = guild.get_member(interaction.user.id) if guild else None
+        if not is_admin(member):
+            await safe_send_interaction(interaction, "Only administrators can delete games.", ephemeral=True)
+            return
+
+        if minutes < 1:
+            await safe_send_interaction(interaction, "Duration must be at least 1 minute.", ephemeral=True)
+            return
+
+        guild_id = guild.id
+        
+        try:
+            count = await db.delete_short_games(guild_id, minutes)
+        except DatabaseError as e:
+            logger.error(f"Failed to delete short games: {e}")
+            await safe_send_interaction(interaction, "❌ Failed to delete games. Database error.", ephemeral=True)
+            return
+
+        if count == 0:
+            await safe_send_interaction(interaction, f"No games found shorter than {minutes} minute(s).", ephemeral=True)
+        else:
+            await safe_send_interaction(interaction, f"✅ Deleted {count} game(s) shorter than {minutes} minute(s).", ephemeral=True)
+    except Exception as e:
+        logger.exception(f"Unexpected error in deleteshortgames_handler: {e}")
+        await safe_send_interaction(interaction, "❌ Failed to delete games. See logs.", ephemeral=True)
+
+
+bot.deleteshortgames_handler = deleteshortgames_handler
+
+
 async def autosetup_handler(interaction: discord.Interaction) -> None:
     """Handle /autosetup command - automatically create gothic-themed BOTC server structure."""
     try:
