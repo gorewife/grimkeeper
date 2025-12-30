@@ -114,7 +114,7 @@ class AnnouncementProcessor:
             from botc.handlers import call_from_website
             try:
                 logger.info(f"Calling townspeople from website: guild_id={guild_id}, category_id={category_id}")
-                moved_count, dest_channel = await call_from_website(guild, category_id)
+                moved_count, dest_channel = await call_from_website(guild, category_id, self.bot)
                 # Get announce channel
                 session = None
                 if category_id:

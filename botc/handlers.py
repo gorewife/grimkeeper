@@ -44,10 +44,13 @@ from botc.utils import strip_st_prefix, add_script_emoji
 logger = logging.getLogger('botc_bot')
 
 
-async def call_from_website(guild: discord.Guild, category_id: int):
+async def call_from_website(guild: discord.Guild, category_id: int, bot):
     """Call townspeople from website trigger."""
-    import main
-    return await main.call_townspeople(guild, category_id)
+    # Access call_townspeople from bot
+    call_func = getattr(bot, 'call_townspeople', None)
+    if not call_func:
+        raise ValueError("call_townspeople function not found on bot")
+    return await call_func(guild, category_id)
 
 
 async def start_game_handler(
