@@ -212,7 +212,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
         active[prefix_key] = not active.get(prefix_key, False)
     
     # Clean up followers if no longer a spectator
-    # This handles: *! to toggle off, *st, or *cost (all remove spectator status)
     is_spectator_now = active.get("spe", False)
     if was_spectator and not is_spectator_now:
         follower_id = member.id
@@ -221,7 +220,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
             bot.follower_targets.pop(follower_id)
             await clean_followers(member.guild)
 
-    # Storyteller logic: manage session assignment (prefix-based, no role)
     if prefix_key == "st":
         guild = member.guild
         guild_id = guild.id
@@ -243,8 +241,7 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
                 session.storyteller_user_id = member.id
                 await bot.session_manager.update_session(session)
             elif botc_category and bot.session_manager:
-                # Create new session ONLY if in a category - don't auto-create in random categories
-                # User should run /setbotc to properly configure the session first
+                # Create new session ONLY if in a category
                 logger.info(f"User {member.display_name} used *st but no session exists in category {botc_category.name}. Suggest using /setbotc.")
             
             # Remove ST prefix from other members in this category ONLY
@@ -314,7 +311,6 @@ async def toggle_prefix(member: discord.Member, channel: discord.TextChannel, pr
         
         await member.edit(nick=new_nick)
         
-        # Send confirmation AFTER successful edit
         msg_text = confirmation_messages.get(prefix_key)
         if msg_text:
             await send_temporary(channel, msg_text, delay=DELETE_DELAY_QUICK)
@@ -427,7 +423,6 @@ async def call_townspeople(guild: discord.Guild, category_id: Optional[int] = No
             members_to_move.append(member)
     
     # Move members in batches to avoid Discord rate limits
-    # Optimized batch settings for faster moves while respecting limits
     BATCH_SIZE = 15
     BATCH_DELAY = 0.08  # 80ms between batches
     
@@ -505,9 +500,6 @@ bot.start_game_handler = start_game_handler
 
 
 # Use `from botc.utils import parse_duration, humanize_seconds, format_end_time`
-
-
-
 
 from botc.handlers import end_game_handler as _end_game_handler
 
@@ -776,17 +768,15 @@ class GameHistoryView(discord.ui.View):
             else:
                 script_display = script
             
-            # Format timestamps - stored as Unix timestamps (floats)
+            # Format timestamps stored as Unix timestamps (floats)
             start_time = game.get("start_time", 0)
             end_time = game.get("end_time", 0)
             
-            # Calculate duration in seconds
             if end_time and start_time:
                 duration = int(end_time - start_time)
             else:
                 duration = 0
             
-            # Calculate duration in hours and minutes
             hours, remainder = divmod(duration, 3600)
             minutes, _ = divmod(remainder, 60)
             
@@ -882,10 +872,8 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
             if not stats:
                 await interaction.response.send_message(f"{user.display_name} has no storytelling history.", ephemeral=True)
                 return
-            # Defer early since card generation takes time
             await interaction.response.defer()
         
-        # If showing individual stats, make it more detailed
         if user and len(stats) == 1:
             stat = stats[0]
             total = stat['total_games']
@@ -905,13 +893,10 @@ async def storytellerstats_handler(interaction: discord.Interaction, user: disco
                 color=discord.Color.purple()
             )
             
-            # Set user's profile picture as thumbnail
             embed.set_thumbnail(url=user.display_avatar.url)
             
-            # Set author with name and avatar
             embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
             
-            # Get profile data and add to description if available
             profile = await db.get_storyteller_profile(user.id)
             if profile:
                 profile_text = []
@@ -1097,12 +1082,6 @@ bot.storytellerstats_handler = storytellerstats_handler
 
 
 async def deletegame_handler(interaction: discord.Interaction, game_id: int) -> None:
-    """Delete a specific game from history by game_id (Admin only).
-
-    Args:
-        interaction: Discord interaction
-        game_id: The game_id to delete (shown in /gamehistory)
-    """
     try:
         guild = interaction.guild
         member = guild.get_member(interaction.user.id) if guild else None
@@ -1145,12 +1124,6 @@ async def deletegame_handler(interaction: discord.Interaction, game_id: int) -> 
 
 
 async def clearhistory_handler(interaction: discord.Interaction) -> None:
-    """Clear all game history for the guild (Admin only).
-
-    This operation is irreversible; the slash command is restricted to
-    administrators. It clears the stored `game_history` entry for the
-    guild and persists the change.
-    """
     try:
         guild = interaction.guild
         member = guild.get_member(interaction.user.id) if guild else None
@@ -1222,7 +1195,6 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
         guild = interaction.guild
         member = guild.get_member(interaction.user.id) if guild else None
         
-        # Check admin permissions
         if not is_admin(member):
             await interaction.response.send_message("❌ Only administrators can use /autosetup.", ephemeral=True)
             return
