@@ -1,8 +1,3 @@
-"""Blood on the Clocktower Wiki API integration.
-
-This module provides functions to fetch and parse character information
-from the official BOTC wiki at https://wiki.bloodontheclocktower.com/
-"""
 from __future__ import annotations
 
 import logging
@@ -188,7 +183,6 @@ def _parse_character_html(html: str, title: str) -> Optional[CharacterInfo]:
     # Fighting section
     fighting = _extract_section(soup, "Fighting")
     if not fighting:
-        # Try "How to Fight"
         fighting = _extract_section(soup, "How to Fight")
     char_info.fighting = fighting
     
@@ -208,7 +202,6 @@ def _extract_section(soup: BeautifulSoup, section_name: str) -> str:
     # Find the heading
     heading = soup.find(['h2', 'h3'], id=re.compile(section_name.replace(' ', '_'), re.IGNORECASE))
     if not heading:
-        # Try finding by text content
         for h in soup.find_all(['h2', 'h3']):
             if section_name.lower() in h.get_text(strip=True).lower():
                 heading = h
@@ -236,13 +229,10 @@ def _extract_section_after_element(heading) -> str:
         if sibling.name in ['h2', 'h3', 'h4']:
             break
         
-        # Skip edit buttons and other non-content elements
         if sibling.name in ['div'] and ('mw-editsection' in sibling.get('class', []) or 'edit-action' in sibling.get('class', [])):
             continue
         
-        # Extract text, handling lists specially
         if sibling.name in ['p', 'div']:
-            # Remove edit buttons and other UI elements
             for unwanted in sibling.find_all(['span', 'a'], class_=re.compile(r'mw-editsection|edit-action')):
                 unwanted.decompose()
             
@@ -284,11 +274,9 @@ def _clean_wiki_text(text: str) -> str:
     for token in wiki_tokens:
         text = text.replace(token, f' **{token}** ')
     
-    # Clean up excessive whitespace
     text = re.sub(r'\s+', ' ', text)
     text = re.sub(r'\n{3,}', '\n\n', text)
     
-    # Fix common formatting issues
     text = text.replace('  ', ' ')
     text = text.strip()
     
@@ -317,15 +305,6 @@ def _extract_ability(summary: str) -> str:
 
 
 def truncate_text(text: str, max_length: int = 1024) -> str:
-    """Truncate text to fit Discord embed field limits.
-    
-    Args:
-        text: Text to truncate
-        max_length: Maximum length (default 1024 for Discord fields)
-        
-    Returns:
-        Truncated text with ellipsis if needed
-    """
     if len(text) <= max_length:
         return text
     
