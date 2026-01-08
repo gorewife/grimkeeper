@@ -6,30 +6,13 @@ labels: bug
 assignees: ''
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**What happened?**
+Describe the bug.
 
-**To Reproduce**
-Steps to reproduce the behavior:
-1. Run command '...'
-2. Perform action '...'
-3. See error
+**How can we reproduce it?**
+What steps trigger the issue?
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+**What did you expect to happen?**
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
-
-**Environment:**
-- Bot version: [run `*changelog` to see version]
-- Discord server size: [approximate number of members]
-- Hosting method: [e.g., official bot, self-hosted on AWS, self-hosted local]
-
-**Additional context**
-Add any other context about the problem here.
-
-**Error logs** (if self-hosting)
-```
-Paste relevant error logs from discord.log here
-```
+**Any additional info?** (optional)
+Screenshots, error logs, environment details, etc.
