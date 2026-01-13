@@ -15,7 +15,6 @@ from botc.config import get_settings
 from botc.discord_utils import safe_send_interaction, safe_defer, safe_send_message
 from botc.utils import (
     get_botc_category,
-    get_exception_channel_ids,
     is_storyteller,
     is_main_storyteller,
     is_admin,
@@ -39,14 +38,8 @@ from botc.constants import (
     COMMAND_COOLDOWN_LONG,
     DELETABLE_COMMANDS,
     MAX_NICK_LENGTH,
-    SCRIPT_EMOJI_TB,
-    SCRIPT_EMOJI_SNV,
-    SCRIPT_EMOJI_BMR,
-    ICON_GOOD,
-    ICON_EVIL,
     EMOJI_SECTS_AND_VIOLETS,
     EMOJI_BAD_MOON_RISING,
-    EMOJI_TOWN_SQUARE,
     EMOJI_SWORD,
     EMOJI_SCRIPT,
     EMOJI_PLAYERS,
@@ -61,11 +54,6 @@ from botc.constants import (
     EMOJI_BALANCE,
     EMOJI_QUESTION,
     EMOJI_STAR,
-    DATABASE_POOL_MIN_SIZE,
-    DATABASE_POOL_MAX_SIZE,
-    DATABASE_COMMAND_TIMEOUT,
-    MAX_CHANGELOG_VERSIONS,
-    DISCORD_NICKNAME_MAX_LENGTH,
 )
 from botc.exceptions import (
     GrimkeeperError,
