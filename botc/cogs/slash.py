@@ -890,11 +890,10 @@ class SlashCog(commands.Cog):
             await interaction.response.defer(ephemeral=False)
             
             try:
-                # Import database
-                import botc.database as db
-                
+                db = self.bot.db
+
                 guild_id = interaction.guild.id
-                
+
                 # Get session context from channel
                 category_id = None
                 if interaction.channel and interaction.channel.category:
@@ -903,21 +902,21 @@ class SlashCog(commands.Cog):
                     session = await self.bot.get_session_from_channel(interaction.channel, self.bot.session_manager)
                     if session:
                         category_id = session.category_id
-                
+
                 # Get active game
                 active_game = await db.get_active_game(guild_id, category_id)
                 if not active_game:
                     await interaction.followup.send("❌ No active game found. Use `/startgame` first.", ephemeral=True)
                     return
-                
+
                 # Get current players
                 current_players = json.loads(active_game.get("players", "[]")) if isinstance(active_game.get("players"), str) else active_game.get("players", [])
-                
+
                 # Check if player already in game
                 if player.id in current_players:
                     await interaction.followup.send(f"❌ {player.mention} is already in the game.", ephemeral=True)
                     return
-                
+
                 # Add player
                 current_players.append(player.id)
                 success = await db.update_game_players(guild_id, current_players, category_id)

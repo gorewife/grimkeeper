@@ -980,6 +980,7 @@ class Database:
             )
             if row:
                 data = dict(row)
+                data.pop('session_id', None)
                 # Parse vc_caps from JSON
                 if 'vc_caps' in data:
                     if data['vc_caps'] is None:
@@ -998,45 +999,7 @@ class Database:
                     data['vc_caps'] = {}
                 return Session(**data)
             return None
-    
-    async def get_session_by_code(self, guild_id: int, session_code: str):
-        """Get a session by guild ID and session code.
-        
-        Args:
-            guild_id: Discord guild ID
-            session_code: Session code (e.g., "s1", "s2")
-            
-        Returns:
-            Session object if found, None otherwise
-        """
-        from botc.session import Session
-        import json
-        
-        async with self.pool.acquire() as conn:
-            row = await conn.fetchrow(
-                """SELECT * FROM sessions 
-                   WHERE guild_id = $1 AND session_code = $2""",
-                guild_id, session_code
-            )
-            if row:
-                data = dict(row)
-                # Parse vc_caps from JSON
-                if 'vc_caps' in data:
-                    if data['vc_caps'] is None:
-                        data['vc_caps'] = {}
-                    elif isinstance(data['vc_caps'], str):
-                        data['vc_caps'] = json.loads(data['vc_caps']) if data['vc_caps'] else {}
-                        if data['vc_caps']:
-                            data['vc_caps'] = {int(k): v for k, v in data['vc_caps'].items()}
-                    elif isinstance(data['vc_caps'], dict):
-                        data['vc_caps'] = {int(k): v for k, v in data['vc_caps'].items()} if data['vc_caps'] else {}
-                    else:
-                        data['vc_caps'] = {}
-                else:
-                    data['vc_caps'] = {}
-                return Session(**data)
-            return None
-    
+
     async def update_session(self, session) -> None:
         """Update an existing session.
         

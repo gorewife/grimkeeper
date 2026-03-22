@@ -268,24 +268,6 @@ class SessionManager:
         # No session found
         return None
     
-    async def get_session_by_code(self, guild_id: int, session_code: str) -> Optional[Session]:
-        """Get a session by its session code.
-        
-        Args:
-            guild_id: Discord guild ID
-            session_code: Session code (e.g., "s1", "s2")
-            
-        Returns:
-            Session if found, None otherwise
-        """
-        session = await self.db.get_session_by_code(guild_id, session_code)
-        
-        if session:
-            # Cache it for future access
-            self._cache[session.session_id] = session
-        
-        return session
-    
     async def create_session(
         self, 
         guild_id: int, 
