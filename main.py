@@ -1409,6 +1409,8 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
         guild = interaction.guild
         member = interaction.user
 
+        logger.info(f"autosetup: user={member} type={type(member).__name__} guild_owner={guild.owner_id if guild else None} user_id={member.id} has_guild_perms={hasattr(member, 'guild_permissions')} is_admin_perm={member.guild_permissions.administrator if hasattr(member, 'guild_permissions') else 'N/A'}")
+
         if not await is_admin(member, db):
             await interaction.response.send_message(
                 "❌ Only administrators can use /autosetup.", ephemeral=True
