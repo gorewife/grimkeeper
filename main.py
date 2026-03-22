@@ -1409,7 +1409,7 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
         guild = interaction.guild
         member = guild.get_member(interaction.user.id) if guild else None
 
-        if not is_admin(member):
+        if not await is_admin(member):
             await interaction.response.send_message(
                 "❌ Only administrators can use /autosetup.", ephemeral=True
             )
