@@ -980,7 +980,10 @@ class Database:
             )
             if row:
                 data = dict(row)
-                data.pop('session_id', None)
+                # Keep only fields the Session dataclass knows about
+                import dataclasses
+                known_fields = {f.name for f in dataclasses.fields(Session)}
+                data = {k: v for k, v in data.items() if k in known_fields}
                 # Parse vc_caps from JSON
                 if 'vc_caps' in data:
                     if data['vc_caps'] is None:
