@@ -539,7 +539,9 @@ bot.timer_manager = timer_manager
 bot.session_manager = None  # Will be set in on_ready after DB initialization
 bot.db = db
 bot.check_rate_limit = check_rate_limit
-bot.is_admin = lambda member, *, interaction=None: is_admin(member, bot.db, interaction=interaction)
+bot.is_admin = lambda member, *, interaction=None: is_admin(
+    member, bot.db, interaction=interaction
+)
 bot.send_temporary = send_temporary
 bot.toggle_prefix = toggle_prefix
 bot.get_botc_category = get_botc_category
@@ -1037,7 +1039,11 @@ async def storytellerstats_handler(
                 avg_minutes = total_minutes // total
                 avg_hours = avg_minutes // 60
                 avg_mins = avg_minutes % 60
-                duration_str = f"{int(avg_hours)}h {int(avg_mins)}m" if avg_hours > 0 else f"{int(avg_minutes)}m"
+                duration_str = (
+                    f"{int(avg_hours)}h {int(avg_mins)}m"
+                    if avg_hours > 0
+                    else f"{int(avg_minutes)}m"
+                )
                 embed.add_field(
                     name=f"{EMOJI_CLOCK} Game Metrics",
                     value=f"**Avg Game Length:** {duration_str}",
@@ -1066,12 +1072,18 @@ async def storytellerstats_handler(
                     evil_rate = (evil / total * 100) if total > 0 else 0
                     medal = {1: "🥇", 2: "🥈", 3: "🥉"}.get(idx, f"**{idx}.**")
                     stats_text = f"**{total} games** • {EMOJI_GOOD} {good} ({good_rate:.0f}%) | {EMOJI_EVIL} {evil} ({evil_rate:.0f}%)"
-                    embed.add_field(name=f"{medal} {st_name}", value=stats_text, inline=False)
+                    embed.add_field(
+                        name=f"{medal} {st_name}", value=stats_text, inline=False
+                    )
 
             if len(stats) > 10:
-                embed.set_footer(text=f"Showing top 10 of {len(stats)} storytellers • v{VERSION}")
+                embed.set_footer(
+                    text=f"Showing top 10 of {len(stats)} storytellers • v{VERSION}"
+                )
             else:
-                embed.set_footer(text=f"Use /ststats @user for detailed stats • v{VERSION}")
+                embed.set_footer(
+                    text=f"Use /ststats @user for detailed stats • v{VERSION}"
+                )
 
             await interaction.response.send_message(embed=embed)
 
@@ -1405,7 +1417,7 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
                     f"**Running Multiple Games:**\n"
                     f"• Run `/autosetup` again to create more game categories\n"
                     f"• Each session operates completely independently\n"
-                    f"• Use `*sessions` to view all active sessions"
+                    f"• Use `/sessions` to view all active sessions"
                 ),
                 inline=False,
             )
