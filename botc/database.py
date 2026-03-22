@@ -753,71 +753,22 @@ class Database:
             player_count: Number of players in the game
         """
         async with self.pool.acquire() as conn:
-            # Determine script category
-            script_lower = script.lower()
-            if 'trouble' in script_lower and 'brewing' in script_lower:
-                script_type = 'tb'
-            elif 'sects' in script_lower or 'violet' in script_lower:
-                script_type = 'snv'
-            elif 'bad' in script_lower and 'moon' in script_lower:
-                script_type = 'bmr'
-            else:
-                script_type = None
-            
-            # Build the update query dynamically
-            if script_type:
-                await conn.execute(f"""
-                    INSERT INTO storyteller_stats (
-                        guild_id, storyteller_id,
-                        total_games, good_wins, evil_wins,
-                        {script_type}_games, {script_type}_good_wins, {script_type}_evil_wins,
-                        total_game_duration, total_player_count,
-                        last_game_at
-                    ) VALUES (
-                        $1, $2, 1,
-                        CASE WHEN $3 = 'Good' THEN 1 ELSE 0 END,
-                        CASE WHEN $3 = 'Evil' THEN 1 ELSE 0 END,
-                        1,
-                        CASE WHEN $3 = 'Good' THEN 1 ELSE 0 END,
-                        CASE WHEN $3 = 'Evil' THEN 1 ELSE 0 END,
-                        $4, $5,
-                        NOW()
-                    )
-                    ON CONFLICT (guild_id, storyteller_id) DO UPDATE SET
-                        total_games = storyteller_stats.total_games + 1,
-                        good_wins = storyteller_stats.good_wins + CASE WHEN $3 = 'Good' THEN 1 ELSE 0 END,
-                        evil_wins = storyteller_stats.evil_wins + CASE WHEN $3 = 'Evil' THEN 1 ELSE 0 END,
-                        {script_type}_games = storyteller_stats.{script_type}_games + 1,
-                        {script_type}_good_wins = storyteller_stats.{script_type}_good_wins + CASE WHEN $3 = 'Good' THEN 1 ELSE 0 END,
-                        {script_type}_evil_wins = storyteller_stats.{script_type}_evil_wins + CASE WHEN $3 = 'Evil' THEN 1 ELSE 0 END,
-                        total_game_duration = storyteller_stats.total_game_duration + $4,
-                        total_player_count = storyteller_stats.total_player_count + $5,
-                        last_game_at = NOW(),
-                        updated_at = NOW()
-                """, guild_id, storyteller_id, winner, game_duration, player_count)
-            else:
-                # No specific script tracking
-                await conn.execute("""
-                    INSERT INTO storyteller_stats (
-                        guild_id, storyteller_id,
-                        total_games, good_wins, evil_wins,
-                        total_game_duration, total_player_count,
-                        last_game_at
-                    ) VALUES ($1, $2, 1,
-                        CASE WHEN $3 = 'Good' THEN 1 ELSE 0 END,
-                        CASE WHEN $3 = 'Evil' THEN 1 ELSE 0 END,
-                        $4, $5,
-                        NOW()
-                    )
-                    ON CONFLICT (guild_id, storyteller_id) DO UPDATE SET
-                        total_games = storyteller_stats.total_games + 1,
-                        good_wins = storyteller_stats.good_wins + CASE WHEN $3 = 'Good' THEN 1 ELSE 0 END,
-                        evil_wins = storyteller_stats.evil_wins + CASE WHEN $3 = 'Evil' THEN 1 ELSE 0 END,
-                        total_game_duration = storyteller_stats.total_game_duration + $4,
-                        total_player_count = storyteller_stats.total_player_count + $5,
-                        last_game_at = NOW(),
-                        updated_at = NOW()
-                """, guild_id, storyteller_id, winner, game_duration, player_count)
+            game_minutes = game_duration // 60
+            await conn.execute("""
+                INSERT INTO storyteller_stats (
+                    guild_id, storyteller_id,
+                    games_run, good_wins, evil_wins, total_minutes
+                ) VALUES ($1, $2, 1,
+                    CASE WHEN $3 = 'Good' THEN 1 ELSE 0 END,
+                    CASE WHEN $3 = 'Evil' THEN 1 ELSE 0 END,
+                    $4
+                )
+                ON CONFLICT (guild_id, storyteller_id) DO UPDATE SET
+                    games_run = storyteller_stats.games_run + 1,
+                    good_wins = storyteller_stats.good_wins + CASE WHEN $3 = 'Good' THEN 1 ELSE 0 END,
+                    evil_wins = storyteller_stats.evil_wins + CASE WHEN $3 = 'Evil' THEN 1 ELSE 0 END,
+                    total_minutes = storyteller_stats.total_minutes + $4
+            """, guild_id, storyteller_id, winner, game_minutes)
     
     async def _decrement_storyteller_stats(self, guild_id: int, storyteller_id: int,
                                           script: str, winner: str, game_duration: int = 0,
@@ -833,17 +784,6 @@ class Database:
             player_count: Number of players in the game
         """
         async with self.pool.acquire() as conn:
-            # Determine script category
-            script_lower = script.lower()
-            if 'trouble' in script_lower and 'brewing' in script_lower:
-                script_type = 'tb'
-            elif 'sects' in script_lower or 'violet' in script_lower:
-                script_type = 'snv'
-            elif 'bad' in script_lower and 'moon' in script_lower:
-                script_type = 'bmr'
-            else:
-                script_type = None
-            
             # Check if stats exist for this storyteller
             stats = await conn.fetchrow(
                 "SELECT * FROM storyteller_stats WHERE guild_id = $1 AND storyteller_id = $2",
@@ -852,33 +792,16 @@ class Database:
             
             if not stats:
                 return  # No stats to update
-            
-            # Decrement stats (ensure we don't go below 0)
-            if script_type:
-                await conn.execute(f"""
-                    UPDATE storyteller_stats SET
-                        total_games = GREATEST(total_games - 1, 0),
-                        good_wins = GREATEST(good_wins - CASE WHEN $3 = 'Good' THEN 1 ELSE 0 END, 0),
-                        evil_wins = GREATEST(evil_wins - CASE WHEN $3 = 'Evil' THEN 1 ELSE 0 END, 0),
-                        {script_type}_games = GREATEST({script_type}_games - 1, 0),
-                        {script_type}_good_wins = GREATEST({script_type}_good_wins - CASE WHEN $3 = 'Good' THEN 1 ELSE 0 END, 0),
-                        {script_type}_evil_wins = GREATEST({script_type}_evil_wins - CASE WHEN $3 = 'Evil' THEN 1 ELSE 0 END, 0),
-                        total_game_duration = GREATEST(total_game_duration - $4, 0),
-                        total_player_count = GREATEST(total_player_count - $5, 0),
-                        updated_at = NOW()
-                    WHERE guild_id = $1 AND storyteller_id = $2
-                """, guild_id, storyteller_id, winner, game_duration, player_count)
-            else:
-                await conn.execute("""
-                    UPDATE storyteller_stats SET
-                        total_games = GREATEST(total_games - 1, 0),
-                        good_wins = GREATEST(good_wins - CASE WHEN $3 = 'Good' THEN 1 ELSE 0 END, 0),
-                        evil_wins = GREATEST(evil_wins - CASE WHEN $3 = 'Evil' THEN 1 ELSE 0 END, 0),
-                        total_game_duration = GREATEST(total_game_duration - $4, 0),
-                        total_player_count = GREATEST(total_player_count - $5, 0),
-                        updated_at = NOW()
-                    WHERE guild_id = $1 AND storyteller_id = $2
-                """, guild_id, storyteller_id, winner, game_duration, player_count)
+
+            game_minutes = game_duration // 60
+            await conn.execute("""
+                UPDATE storyteller_stats SET
+                    games_run = GREATEST(games_run - 1, 0),
+                    good_wins = GREATEST(good_wins - CASE WHEN $3 = 'Good' THEN 1 ELSE 0 END, 0),
+                    evil_wins = GREATEST(evil_wins - CASE WHEN $3 = 'Evil' THEN 1 ELSE 0 END, 0),
+                    total_minutes = GREATEST(total_minutes - $4, 0)
+                WHERE guild_id = $1 AND storyteller_id = $2
+            """, guild_id, storyteller_id, winner, game_minutes)
     
     async def get_storyteller_stats(self, guild_id: int = None) -> List[Dict[str, Any]]:
         """Get storyteller statistics, optionally filtered by guild.
@@ -891,36 +814,22 @@ class Database:
         """
         async with self.pool.acquire() as conn:
             if guild_id is None:
-                # Bot-wide stats - aggregate across all guilds for each storyteller
                 rows = await conn.fetch(
-                    """SELECT 
+                    """SELECT
                         storyteller_id,
-                        NULL as storyteller_name,
-                        SUM(total_games) as total_games,
+                        SUM(games_run) as games_run,
                         SUM(good_wins) as good_wins,
                         SUM(evil_wins) as evil_wins,
-                        SUM(tb_games) as tb_games,
-                        SUM(tb_good_wins) as tb_good_wins,
-                        SUM(tb_evil_wins) as tb_evil_wins,
-                        SUM(snv_games) as snv_games,
-                        SUM(snv_good_wins) as snv_good_wins,
-                        SUM(snv_evil_wins) as snv_evil_wins,
-                        SUM(bmr_games) as bmr_games,
-                        SUM(bmr_good_wins) as bmr_good_wins,
-                        SUM(bmr_evil_wins) as bmr_evil_wins,
-                        SUM(total_game_duration) as total_game_duration,
-                        SUM(total_player_count) as total_player_count,
-                        MAX(last_game_at) as last_game_at
+                        SUM(total_minutes) as total_minutes
                     FROM storyteller_stats
                     GROUP BY storyteller_id
-                    ORDER BY SUM(total_games) DESC, MAX(last_game_at) DESC"""
+                    ORDER BY SUM(games_run) DESC"""
                 )
             else:
-                # Guild-specific stats
                 rows = await conn.fetch(
-                    """SELECT * FROM storyteller_stats 
-                       WHERE guild_id = $1 
-                       ORDER BY total_games DESC, last_game_at DESC""",
+                    """SELECT * FROM storyteller_stats
+                       WHERE guild_id = $1
+                       ORDER BY games_run DESC""",
                     guild_id
                 )
             return [dict(row) for row in rows]
