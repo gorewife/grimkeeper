@@ -5,17 +5,17 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Guilds table
+-- Guilds table (base table, no dependencies)
 CREATE TABLE IF NOT EXISTS guilds (
     guild_id BIGINT PRIMARY KEY,
     grimoire_link TEXT,
-    active_session_id UUID REFERENCES sessions(session_id) ON DELETE SET NULL,
+    active_session_id UUID,  -- FK will be added after sessions table
     language VARCHAR(5) DEFAULT 'en' NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_guilds_language ON guilds(language);
 
--- Sessions table
+-- Sessions table (depends on guilds)
 CREATE TABLE IF NOT EXISTS sessions (
     session_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     guild_id BIGINT NOT NULL REFERENCES guilds(guild_id) ON DELETE CASCADE,
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     destination_channel_id BIGINT,
     announce_channel_id BIGINT,
     exception_channel_id BIGINT,
-    active_game_id INTEGER,  -- FK added after games table is created
+    active_game_id INTEGER,  -- FK will be added after games table
     storyteller_user_id BIGINT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_active TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -37,7 +37,7 @@ CREATE INDEX IF NOT EXISTS idx_sessions_guild_id ON sessions(guild_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_category_id ON sessions(category_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_active_game_id ON sessions(active_game_id);
 
--- Games table (tracks individual game instances)
+-- Games table (depends on guilds and sessions)
 CREATE TABLE IF NOT EXISTS games (
     game_id SERIAL PRIMARY KEY,
     guild_id BIGINT NOT NULL REFERENCES guilds(guild_id) ON DELETE CASCADE,
@@ -57,6 +57,19 @@ CREATE INDEX IF NOT EXISTS idx_games_storyteller_id ON games(storyteller_id);
 CREATE INDEX IF NOT EXISTS idx_games_started_at ON games(started_at);
 CREATE INDEX IF NOT EXISTS idx_games_session_id ON games(session_id);
 CREATE INDEX IF NOT EXISTS idx_games_category_id ON games(category_id);
+
+-- Now add the circular references
+ALTER TABLE guilds 
+ADD CONSTRAINT guilds_active_session_id_fkey 
+FOREIGN KEY (active_session_id) 
+REFERENCES sessions(session_id) 
+ON DELETE SET NULL;
+
+ALTER TABLE sessions 
+ADD CONSTRAINT sessions_active_game_id_fkey 
+FOREIGN KEY (active_game_id) 
+REFERENCES games(game_id) 
+ON DELETE SET NULL;
 
 -- Storyteller stats table (aggregate statistics)
 CREATE TABLE IF NOT EXISTS storyteller_stats (
@@ -140,21 +153,3 @@ CREATE TABLE IF NOT EXISTS channel_limits (
 );
 
 CREATE INDEX IF NOT EXISTS idx_channel_limits_guild_id ON channel_limits(guild_id);
-
--- Add foreign key constraints after both sessions and games tables exist
--- This handles the circular reference between sessions and games
-DO $$ 
-BEGIN
-    -- Add FK for sessions.active_game_id -> games.game_id with ON DELETE SET NULL
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.table_constraints 
-        WHERE constraint_name = 'sessions_active_game_id_fkey' 
-        AND table_name = 'sessions'
-    ) THEN
-        ALTER TABLE sessions 
-        ADD CONSTRAINT sessions_active_game_id_fkey 
-        FOREIGN KEY (active_game_id) 
-        REFERENCES games(game_id) 
-        ON DELETE SET NULL;
-    END IF;
-END $$;

@@ -1,6 +1,6 @@
 """Storyteller stats card generator using Playwright.
 
-Generates gothic-themed image cards for storyteller statistics using
+Generates image cards for storyteller statistics using
 HTML/CSS rendering via Playwright browser automation.
 """
 from __future__ import annotations
