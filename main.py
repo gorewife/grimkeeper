@@ -1418,8 +1418,8 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
         await interaction.response.defer(ephemeral=False)
 
         # Check bot permissions
-        bot_member = guild.get_member(bot.user.id)
-        if not bot_member or not bot_member.guild_permissions.manage_channels:
+        bot_perms = interaction.app_permissions
+        if not bot_perms or not bot_perms.manage_channels:
             await interaction.followup.send(
                 "❌ Bot needs 'Manage Channels' permission to run autosetup.",
                 ephemeral=True,
