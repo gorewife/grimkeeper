@@ -768,13 +768,13 @@ class Database:
             if script_type:
                 await conn.execute(f"""
                     INSERT INTO storyteller_stats (
-                        guild_id, storyteller_id, storyteller_name,
+                        guild_id, storyteller_id,
                         total_games, good_wins, evil_wins,
                         {script_type}_games, {script_type}_good_wins, {script_type}_evil_wins,
                         total_game_duration, total_player_count,
                         last_game_at
                     ) VALUES (
-                        $1, $2, '', 1,
+                        $1, $2, 1,
                         CASE WHEN $3 = 'Good' THEN 1 ELSE 0 END,
                         CASE WHEN $3 = 'Evil' THEN 1 ELSE 0 END,
                         1,
@@ -799,11 +799,11 @@ class Database:
                 # No specific script tracking
                 await conn.execute("""
                     INSERT INTO storyteller_stats (
-                        guild_id, storyteller_id, storyteller_name,
+                        guild_id, storyteller_id,
                         total_games, good_wins, evil_wins,
                         total_game_duration, total_player_count,
                         last_game_at
-                    ) VALUES ($1, $2, '', 1,
+                    ) VALUES ($1, $2, 1,
                         CASE WHEN $3 = 'Good' THEN 1 ELSE 0 END,
                         CASE WHEN $3 = 'Evil' THEN 1 ELSE 0 END,
                         $4, $5,
@@ -895,7 +895,7 @@ class Database:
                 rows = await conn.fetch(
                     """SELECT 
                         storyteller_id,
-                        MAX(storyteller_name) as storyteller_name,
+                        NULL as storyteller_name,
                         SUM(total_games) as total_games,
                         SUM(good_wins) as good_wins,
                         SUM(evil_wins) as evil_wins,
@@ -927,12 +927,7 @@ class Database:
     
     async def update_storyteller_name(self, guild_id: int, storyteller_id: int, name: str) -> None:
         """Update storyteller display name."""
-        async with self.pool.acquire() as conn:
-            await conn.execute(
-                """UPDATE storyteller_stats SET storyteller_name = $3, updated_at = NOW()
-                   WHERE guild_id = $1 AND storyteller_id = $2""",
-                guild_id, storyteller_id, name
-            )
+        pass  # storyteller_name column not present in current schema
     
     # Session operations
     async def create_session(self, session) -> None:
