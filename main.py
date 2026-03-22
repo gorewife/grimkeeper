@@ -988,17 +988,6 @@ async def storytellerstats_handler(
                 )
             return
 
-        # Update storyteller names if they've changed (only for guild-specific queries)
-        if not user:
-            for stat in stats:
-                st_id = stat["storyteller_id"]
-                member = guild.get_member(st_id)
-                if member and stat["storyteller_name"] != member.display_name:
-                    await db.update_storyteller_name(
-                        guild_id, st_id, member.display_name
-                    )
-                    stat["storyteller_name"] = member.display_name
-
         # Filter for specific user if requested
         if user:
             stats = [s for s in stats if s["storyteller_id"] == user.id]
@@ -1011,9 +1000,10 @@ async def storytellerstats_handler(
 
         if user and len(stats) == 1:
             stat = stats[0]
-            total = stat["total_games"]
+            total = stat["games_run"]
             good = stat["good_wins"]
             evil = stat["evil_wins"]
+            total_minutes = stat.get("total_minutes", 0) or 0
 
             if total == 0:
                 await interaction.response.send_message(
@@ -1026,23 +1016,11 @@ async def storytellerstats_handler(
 
             embed = discord.Embed(
                 title=f"{EMOJI_PEN} Storyteller Stats",
-                description=f"Bot-wide statistics for **{user.display_name}**",
+                description=f"Statistics for **{user.display_name}**",
                 color=discord.Color.purple(),
             )
-
             embed.set_thumbnail(url=user.display_avatar.url)
-
             embed.set_author(name=user.display_name, icon_url=user.display_avatar.url)
-
-            profile = await db.get_storyteller_profile(user.id)
-            if profile:
-                profile_text = []
-                if profile.get("pronouns"):
-                    profile_text.append(f"*({profile['pronouns']})*")
-                if profile.get("custom_title"):
-                    profile_text.append(f"🎭 The {profile['custom_title']}")
-                if profile_text:
-                    embed.description += "\n" + " • ".join(profile_text)
 
             embed.add_field(
                 name=f"{EMOJI_STAR} Overall Performance",
@@ -1055,127 +1033,18 @@ async def storytellerstats_handler(
                 inline=False,
             )
 
-            total_duration = stat.get("total_game_duration", 0) or 0
-            total_players = stat.get("total_player_count", 0) or 0
-
-            if total > 0 and total_duration > 0:
-                avg_duration_minutes = (total_duration / total) // 60
-                avg_duration_hours = avg_duration_minutes // 60
-                avg_duration_mins = avg_duration_minutes % 60
-
-                avg_player_count = total_players / total
-
-                duration_str = (
-                    f"{int(avg_duration_hours)}h {int(avg_duration_mins)}m"
-                    if avg_duration_hours > 0
-                    else f"{int(avg_duration_minutes)}m"
-                )
-
+            if total > 0 and total_minutes > 0:
+                avg_minutes = total_minutes // total
+                avg_hours = avg_minutes // 60
+                avg_mins = avg_minutes % 60
+                duration_str = f"{int(avg_hours)}h {int(avg_mins)}m" if avg_hours > 0 else f"{int(avg_minutes)}m"
                 embed.add_field(
                     name=f"{EMOJI_CLOCK} Game Metrics",
-                    value=(
-                        f"**Avg Game Length:** {duration_str}\n"
-                        f"**{EMOJI_PLAYERS} Avg Player Count:** {avg_player_count:.1f}"
-                    ),
+                    value=f"**Avg Game Length:** {duration_str}",
                     inline=False,
                 )
 
-            script_stats = []
-            if stat["tb_games"] > 0:
-                tb_good_rate = stat["tb_good_wins"] / stat["tb_games"] * 100
-                tb_evil_rate = stat["tb_evil_wins"] / stat["tb_games"] * 100
-                script_stats.append(
-                    f"**{EMOJI_TROUBLE_BREWING} Trouble Brewing**\n"
-                    f"Games: {stat['tb_games']} | {EMOJI_GOOD} {stat['tb_good_wins']} ({tb_good_rate:.0f}%) | {EMOJI_EVIL} {stat['tb_evil_wins']} ({tb_evil_rate:.0f}%)"
-                )
-
-            if stat["snv_games"] > 0:
-                snv_good_rate = stat["snv_good_wins"] / stat["snv_games"] * 100
-                snv_evil_rate = stat["snv_evil_wins"] / stat["snv_games"] * 100
-                script_stats.append(
-                    f"**{EMOJI_SECTS_AND_VIOLETS} Sects & Violets**\n"
-                    f"Games: {stat['snv_games']} | {EMOJI_GOOD} {stat['snv_good_wins']} ({snv_good_rate:.0f}%) | {EMOJI_EVIL} {stat['snv_evil_wins']} ({snv_evil_rate:.0f}%)"
-                )
-
-            if stat["bmr_games"] > 0:
-                bmr_good_rate = stat["bmr_good_wins"] / stat["bmr_games"] * 100
-                bmr_evil_rate = stat["bmr_evil_wins"] / stat["bmr_games"] * 100
-                script_stats.append(
-                    f"**{EMOJI_BAD_MOON_RISING} Bad Moon Rising**\n"
-                    f"Games: {stat['bmr_games']} | {EMOJI_GOOD} {stat['bmr_good_wins']} ({bmr_good_rate:.0f}%) | {EMOJI_EVIL} {stat['bmr_evil_wins']} ({bmr_evil_rate:.0f}%)"
-                )
-
-            if script_stats:
-                embed.add_field(
-                    name=f"{EMOJI_SCRIPT} Script Performance",
-                    value="\n\n".join(script_stats),
-                    inline=False,
-                )
-
-            script_counts = [
-                ("Trouble Brewing", stat["tb_games"]),
-                ("Sects & Violets", stat["snv_games"]),
-                ("Bad Moon Rising", stat["bmr_games"]),
-            ]
-            most_played = max(script_counts, key=lambda x: x[1])
-            if most_played[1] > 0:
-                embed.add_field(
-                    name=f"{EMOJI_SWORD} Favorite Script",
-                    value=f"{add_script_emoji(most_played[0])} ({most_played[1]} games)",
-                    inline=True,
-                )
-
-            if stat.get("last_game_at"):
-                from datetime import datetime
-
-                last_game = stat["last_game_at"]
-                embed.add_field(
-                    name=f"{EMOJI_CANDLE} Last Game",
-                    value=f"<t:{int(last_game.timestamp())}:R>",
-                    inline=True,
-                )
-
-            try:
-                from botc.card_generator import generate_stats_card
-
-                avg_duration_minutes = None
-                avg_players = None
-                if total > 0:
-                    if stat.get("total_game_duration", 0):
-                        avg_duration_minutes = (
-                            stat["total_game_duration"] / total
-                        ) / 60
-                    if stat.get("total_player_count", 0):
-                        avg_players = stat["total_player_count"] / total
-
-                card_buffer = await generate_stats_card(
-                    username=user.display_name,
-                    avatar_url=str(user.display_avatar.url),
-                    total_games=total,
-                    good_wins=good,
-                    evil_wins=evil,
-                    pronouns=profile.get("pronouns") if profile else None,
-                    version=VERSION,
-                    tb_games=stat.get("tb_games", 0) or 0,
-                    snv_games=stat.get("snv_games", 0) or 0,
-                    bmr_games=stat.get("bmr_games", 0) or 0,
-                    avg_duration_minutes=avg_duration_minutes,
-                    avg_players=avg_players,
-                    custom_title=profile.get("custom_title") if profile else None,
-                    color_theme=profile.get("color_theme") if profile else None,
-                )
-
-                if card_buffer:
-                    card_file = discord.File(
-                        fp=card_buffer, filename=f"stats_{user.id}.png"
-                    )
-                    await interaction.followup.send(file=card_file)
-                else:
-                    await interaction.followup.send(embed=embed)
-
-            except Exception as e:
-                logger.warning(f"Failed to generate stats card: {e}")
-                await interaction.followup.send(embed=embed)
+            await interaction.followup.send(embed=embed)
 
         else:
             embed = discord.Embed(
@@ -1184,43 +1053,25 @@ async def storytellerstats_handler(
                 color=discord.Color.purple(),
             )
 
-            for idx, stat in enumerate(stats[:10], 1):  # Show top 10
-                st_name = stat["storyteller_name"] or f"<@{stat['storyteller_id']}>"
-                total = stat["total_games"]
+            for idx, stat in enumerate(stats[:10], 1):
+                st_id = stat["storyteller_id"]
+                member = guild.get_member(st_id)
+                st_name = member.display_name if member else f"<@{st_id}>"
+                total = stat["games_run"]
                 good = stat["good_wins"]
                 evil = stat["evil_wins"]
 
                 if total > 0:
                     good_rate = (good / total * 100) if total > 0 else 0
                     evil_rate = (evil / total * 100) if total > 0 else 0
-
                     medal = {1: "🥇", 2: "🥈", 3: "🥉"}.get(idx, f"**{idx}.**")
-
-                    stats_text = f"**{total} games** • {EMOJI_GOOD} {good} ({good_rate:.0f}%) | {EMOJI_EVIL} {evil} ({evil_rate:.0f}%)\n"
-
-                    scripts = [
-                        ("TB", stat["tb_games"]),
-                        ("S&V", stat["snv_games"]),
-                        ("BMR", stat["bmr_games"]),
-                    ]
-                    top_script = max(scripts, key=lambda x: x[1])
-                    if top_script[1] > 0:
-                        stats_text += (
-                            f"Favorite: {top_script[0]} ({top_script[1]} games)"
-                        )
-
-                    embed.add_field(
-                        name=f"{medal} {st_name}", value=stats_text, inline=False
-                    )
+                    stats_text = f"**{total} games** • {EMOJI_GOOD} {good} ({good_rate:.0f}%) | {EMOJI_EVIL} {evil} ({evil_rate:.0f}%)"
+                    embed.add_field(name=f"{medal} {st_name}", value=stats_text, inline=False)
 
             if len(stats) > 10:
-                embed.set_footer(
-                    text=f"Showing top 10 of {len(stats)} storytellers • v{VERSION}"
-                )
+                embed.set_footer(text=f"Showing top 10 of {len(stats)} storytellers • v{VERSION}")
             else:
-                embed.set_footer(
-                    text=f"Use /ststats @user for detailed stats • v{VERSION}"
-                )
+                embed.set_footer(text=f"Use /ststats @user for detailed stats • v{VERSION}")
 
             await interaction.response.send_message(embed=embed)
 
