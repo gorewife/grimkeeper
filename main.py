@@ -1475,9 +1475,11 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
 
         guild_id = guild.id
 
-        # Create session for this category (don't update guild-wide botc_category_id if sessions already exist)
+        # Ensure guild row exists (FK requirement for sessions table)
+        await db.upsert_guild(guild_id)
+
+        # Set as guild default if first session
         if len(existing_botc_categories) == 0:
-            # First session - set as guild default
             await db.upsert_guild(guild_id, botc_category_id=botc_category.id)
 
         if session_manager:
