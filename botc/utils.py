@@ -245,38 +245,48 @@ async def is_admin(member: Optional[discord.Member], db=None) -> bool:
     Returns:
         True if member has administrator permissions or an admin role, False otherwise
     """
+    import logging
+    _logger = logging.getLogger('botc_bot')
+
     if member is None:
+        _logger.info("is_admin: member is None")
         return False
 
+    guild = getattr(member, 'guild', None)
+    has_perms = hasattr(member, 'guild_permissions')
+    admin_perm = member.guild_permissions.administrator if has_perms else None
+    owner_id = guild.owner_id if guild else None
+
+    _logger.info(f"is_admin: user={member.id} has_guild_perms={has_perms} admin_perm={admin_perm} guild={guild} owner_id={owner_id}")
+
     # Check for Discord administrator permission (includes owner implicitly)
-    if hasattr(member, 'guild_permissions') and member.guild_permissions.administrator:
+    if has_perms and admin_perm:
         return True
 
     # Server owner always has admin access (even without Administrator role)
-    if hasattr(member, 'guild') and member.guild:
-        guild = member.guild
-        if guild.owner_id and guild.owner_id == member.id:
+    if guild:
+        if owner_id and owner_id == member.id:
             return True
         # owner_id may not be cached; fetch via REST API
-        if not guild.owner_id:
-            try:
-                guild_data = await member._state.http.get_guild(guild.id)
-                owner_id = int(guild_data.get('owner_id', 0))
-                if owner_id == member.id:
-                    return True
-            except Exception:
-                pass
-    
+        try:
+            guild_data = await member._state.http.get_guild(guild.id)
+            fetched_owner = int(guild_data.get('owner_id', 0))
+            _logger.info(f"is_admin: fetched owner_id={fetched_owner}")
+            if fetched_owner == member.id:
+                return True
+        except Exception as e:
+            _logger.error(f"is_admin: fetch_guild failed: {e}")
+
     # Check for custom admin roles from database
     if db is not None:
         try:
             admin_role_ids = await db.get_admin_roles(member.guild.id)
             member_role_ids = [role.id for role in member.roles]
-            # Check if any of the member's roles are in the admin roles list
+            _logger.info(f"is_admin: admin_roles={admin_role_ids} member_roles={member_role_ids}")
             if any(role_id in admin_role_ids for role_id in member_role_ids):
                 return True
-        except Exception:
-            # If database check fails, fall back to permission-only check
-            pass
-    
+        except Exception as e:
+            _logger.error(f"is_admin: db check failed: {e}")
+
+    _logger.info(f"is_admin: returning False for user={member.id}")
     return False
