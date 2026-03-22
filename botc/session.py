@@ -394,8 +394,10 @@ class SessionManager:
         Returns:
             Number of sessions deleted
         """
-        deleted = await self.db.delete_inactive_sessions(max_age_days)
-        
+        from datetime import datetime, timedelta
+        cutoff_dt = datetime.utcnow() - timedelta(days=max_age_days)
+        deleted = await self.db.delete_inactive_sessions(cutoff_dt)
+
         # Clear from cache
         import time
         cutoff = time.time() - (max_age_days * 24 * 60 * 60)

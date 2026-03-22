@@ -47,16 +47,7 @@ class EventHandlers(commands.Cog):
         logger.info(f"Bot connected as {self.bot.user}")
         
         db: Database = self.bot.db
-        
-        # Initialize database connection
-        try:
-            await db.connect()
-            await db.initialize_schema()
-            logger.info("Database connected and initialized")
-        except Exception as e:
-            logger.error(f"Failed to connect to database: {e}")
-            raise
-        
+
         # Build follower_targets reverse index from database
         try:
             for guild in self.bot.guilds:

@@ -43,18 +43,21 @@ CREATE TABLE IF NOT EXISTS games (
     guild_id BIGINT NOT NULL REFERENCES guilds(guild_id) ON DELETE CASCADE,
     session_id UUID REFERENCES sessions(session_id) ON DELETE SET NULL,
     category_id BIGINT,
-    started_at TIMESTAMP NOT NULL,
-    ended_at TIMESTAMP,
+    start_time DOUBLE PRECISION NOT NULL,
+    end_time DOUBLE PRECISION,
     script TEXT,
-    num_players INTEGER,
+    custom_name TEXT,
+    players JSONB DEFAULT '[]'::jsonb,
+    player_count INTEGER DEFAULT 0,
     storyteller_id BIGINT,
-    winning_team TEXT CHECK (winning_team IN ('good', 'evil')),
-    duration_minutes INTEGER
+    winner TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    completed_at TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_games_guild_id ON games(guild_id);
 CREATE INDEX IF NOT EXISTS idx_games_storyteller_id ON games(storyteller_id);
-CREATE INDEX IF NOT EXISTS idx_games_started_at ON games(started_at);
+CREATE INDEX IF NOT EXISTS idx_games_is_active ON games(is_active);
 CREATE INDEX IF NOT EXISTS idx_games_session_id ON games(session_id);
 CREATE INDEX IF NOT EXISTS idx_games_category_id ON games(category_id);
 
@@ -124,16 +127,17 @@ CREATE INDEX IF NOT EXISTS idx_timers_end_time ON timers(end_time);
 CREATE INDEX IF NOT EXISTS idx_timers_is_active ON timers(is_active);
 CREATE INDEX IF NOT EXISTS idx_timers_category_id ON timers(category_id);
 
--- Shadow followers table (players who shadow-follow discussion channels)
+-- Shadow followers table (players who shadow-follow other players between voice channels)
 CREATE TABLE IF NOT EXISTS shadow_followers (
     guild_id BIGINT NOT NULL REFERENCES guilds(guild_id) ON DELETE CASCADE,
-    user_id BIGINT NOT NULL,
-    discussion_channel_id BIGINT NOT NULL,
-    PRIMARY KEY (guild_id, user_id, discussion_channel_id)
+    follower_id BIGINT NOT NULL,
+    target_id BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    PRIMARY KEY (follower_id, guild_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_shadow_followers_guild_id ON shadow_followers(guild_id);
-CREATE INDEX IF NOT EXISTS idx_shadow_followers_user_id ON shadow_followers(user_id);
+CREATE INDEX IF NOT EXISTS idx_shadow_followers_target_id ON shadow_followers(target_id);
 
 -- DND users table (do-not-disturb for @everyone pings)
 CREATE TABLE IF NOT EXISTS dnd_users (

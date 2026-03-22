@@ -98,10 +98,10 @@ class Database:
     
     async def _run_migrations(self, migrations_dir: Path, conn) -> None:
         """Run numbered migration files that haven't been applied yet."""
-        # Get list of migration files (002+, since 001 is the base schema)
+        # Get all migration files except 001 (base schema) and 012 (consolidated schema for fresh installs)
         migration_files = sorted([
-            f for f in migrations_dir.glob("*.sql")
-            if f.name.startswith(("002_", "003_", "004_", "005_", "006_", "007_", "008_", "009_"))
+            f for f in migrations_dir.glob("[0-9]*.sql")
+            if not f.name.startswith(("001_", "012_"))
         ])
         
         for migration_file in migration_files:
@@ -1143,7 +1143,7 @@ class Database:
                 sessions.append(Session(**data))
             return sessions
     
-    async def delete_inactive_sessions(self, cutoff_timestamp: float) -> int:
+    async def delete_inactive_sessions(self, cutoff_timestamp) -> int:
         """Delete sessions that haven't been active since cutoff.
         
         Args:
