@@ -257,11 +257,12 @@ async def is_admin(member: Optional[discord.Member], db=None) -> bool:
         guild = member.guild
         if guild.owner_id and guild.owner_id == member.id:
             return True
-        # owner_id may not be cached; fetch to check
-        if guild.owner_id is None:
+        # owner_id may not be cached; fetch via REST API
+        if not guild.owner_id:
             try:
-                fetched_guild = await guild.client.fetch_guild(guild.id)
-                if fetched_guild.owner_id == member.id:
+                guild_data = await member._state.http.get_guild(guild.id)
+                owner_id = int(guild_data.get('owner_id', 0))
+                if owner_id == member.id:
                     return True
             except Exception:
                 pass

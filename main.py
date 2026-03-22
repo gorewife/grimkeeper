@@ -1409,14 +1409,6 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
         guild = interaction.guild
         member = interaction.user
 
-        # Ensure we have the full guild object with owner_id
-        if guild and not guild.owner_id:
-            cached_guild = bot.get_guild(guild.id)
-            if cached_guild:
-                guild = cached_guild
-
-        logger.info(f"autosetup: user={member} user_id={member.id} guild_owner={guild.owner_id if guild else None} is_owner={guild.owner_id == member.id if guild and guild.owner_id else 'unknown'}")
-
         if not await is_admin(member, db):
             await interaction.response.send_message(
                 "❌ Only administrators can use /autosetup.", ephemeral=True
