@@ -140,10 +140,9 @@ async def start_game_handler(
         if not player_ids:
             await safe_send_interaction(
                 interaction,
-                "❌ No players found in BOTC category. Make sure players are in voice channels.",
+                "⚠️ No players found in BOTC voice channels — starting game with 0 players.",
                 ephemeral=True
             )
-            return
         
         # Check if there's already an active game in this category
         existing_game = await db.get_active_game(guild_id, botc_category.id if botc_category else None)
