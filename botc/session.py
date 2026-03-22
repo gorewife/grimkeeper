@@ -316,8 +316,8 @@ class SessionManager:
         Returns:
             Newly created Session
         """
-        import time
-        now = time.time()
+        from datetime import datetime
+        now = datetime.utcnow()
         
         # Generate session code if not provided
         if not session_code:
@@ -350,8 +350,8 @@ class SessionManager:
         Args:
             session: Session with updated fields
         """
-        import time
-        session.last_active = time.time()
+        from datetime import datetime
+        session.last_active = datetime.utcnow()
         
         await self.db.update_session(session)
         self._cache[session.session_id] = session
@@ -399,11 +399,9 @@ class SessionManager:
         deleted = await self.db.delete_inactive_sessions(cutoff_dt)
 
         # Clear from cache
-        import time
-        cutoff = time.time() - (max_age_days * 24 * 60 * 60)
         for session_key in list(self._cache.keys()):
             session = self._cache[session_key]
-            if session.last_active and session.last_active < cutoff:
+            if session.last_active and session.last_active < cutoff_dt:
                 self._cache.pop(session_key, None)
         
         if deleted > 0:

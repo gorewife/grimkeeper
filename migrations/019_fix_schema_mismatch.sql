@@ -2,6 +2,11 @@
 -- Safe to run multiple times (all operations use IF EXISTS/IF NOT EXISTS)
 
 -- ============================================================
+-- Fix guilds table: add missing columns
+-- ============================================================
+ALTER TABLE guilds ADD COLUMN IF NOT EXISTS botc_category_id BIGINT;
+
+-- ============================================================
 -- Fix games table: rename columns to match code expectations
 -- ============================================================
 

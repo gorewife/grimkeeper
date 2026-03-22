@@ -9,6 +9,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE IF NOT EXISTS guilds (
     guild_id BIGINT PRIMARY KEY,
     grimoire_link TEXT,
+    botc_category_id BIGINT,
     active_session_id UUID,  -- FK will be added after sessions table
     language VARCHAR(5) DEFAULT 'en' NOT NULL
 );
