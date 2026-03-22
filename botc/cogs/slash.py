@@ -658,7 +658,7 @@ class SlashCog(commands.Cog):
             member = interaction.user
             
             # Admin check
-            if not await self.bot.is_admin(member):
+            if not await self.bot.is_admin(member, interaction=interaction):
                 await interaction.response.send_message(
                     "❌ Only server administrators can use `/forceendgame`.\n"
                     "If you're the storyteller, use `/endgame` instead.",
@@ -1028,7 +1028,7 @@ class SlashCog(commands.Cog):
         @app_commands.describe(channel="The voice channel to use as Town Square")
         async def settown_slash(interaction: discord.Interaction, channel: discord.VoiceChannel):
             """Set the Town Square voice channel for this session."""
-            if not await self.bot.is_admin(interaction.user):
+            if not await self.bot.is_admin(interaction.user, interaction=interaction):
                 await interaction.response.send_message("❌ Only administrators can set the Town Square.", ephemeral=True)
                 return
             
@@ -1056,7 +1056,7 @@ class SlashCog(commands.Cog):
         @app_commands.describe(category="The category name or ID")
         async def setbotc_slash(interaction: discord.Interaction, category: str):
             """Set the BOTC category for the server."""
-            if not await self.bot.is_admin(interaction.user):
+            if not await self.bot.is_admin(interaction.user, interaction=interaction):
                 await interaction.response.send_message("❌ Only administrators can set the BOTC category.", ephemeral=True)
                 return
             
@@ -1120,7 +1120,7 @@ class SlashCog(commands.Cog):
         @app_commands.describe(channel="The voice channel for private ST discussions (optional)")
         async def setexception_slash(interaction: discord.Interaction, channel: discord.VoiceChannel = None):
             """Set or clear the exception channel for this session."""
-            if not await self.bot.is_admin(interaction.user):
+            if not await self.bot.is_admin(interaction.user, interaction=interaction):
                 await interaction.response.send_message("❌ Only administrators can set the exception channel.", ephemeral=True)
                 return
             
@@ -1154,7 +1154,7 @@ class SlashCog(commands.Cog):
         @app_commands.command(name="sessions", description="[Admin] List all BOTC sessions in this server")
         async def sessions_slash(interaction: discord.Interaction):
             """List all game sessions in the server."""
-            if not await self.bot.is_admin(interaction.user):
+            if not await self.bot.is_admin(interaction.user, interaction=interaction):
                 await interaction.response.send_message("❌ Only administrators can view sessions.", ephemeral=True)
                 return
             
@@ -1242,7 +1242,7 @@ class SlashCog(commands.Cog):
         async def deletesession_slash(interaction: discord.Interaction, category_id: str):
             """Delete a BOTC session configuration."""
             # Admin check
-            if not await self.bot.is_admin(interaction.user):
+            if not await self.bot.is_admin(interaction.user, interaction=interaction):
                 await interaction.response.send_message("Only administrators can delete sessions.", ephemeral=True)
                 return
 
@@ -1292,7 +1292,7 @@ class SlashCog(commands.Cog):
         async def language_slash(interaction: discord.Interaction, language: str):
             """Set the bot's language for this server."""
             # Admin check
-            if not await self.bot.is_admin(interaction.user):
+            if not await self.bot.is_admin(interaction.user, interaction=interaction):
                 await interaction.response.send_message("Only administrators can change the bot's language.", ephemeral=True)
                 return
             
@@ -1335,7 +1335,7 @@ class SlashCog(commands.Cog):
         async def setadmin_slash(interaction: discord.Interaction, role: discord.Role, action: str):
             """Set or remove a role as an admin role for bot commands."""
             # Only server administrators can manage admin roles
-            if not await self.bot.is_admin(interaction.user):
+            if not await self.bot.is_admin(interaction.user, interaction=interaction):
                 await interaction.response.send_message(
                     "❌ Only server administrators can manage admin roles.",
                     ephemeral=True

@@ -539,7 +539,7 @@ bot.timer_manager = timer_manager
 bot.session_manager = None  # Will be set in on_ready after DB initialization
 bot.db = db
 bot.check_rate_limit = check_rate_limit
-bot.is_admin = lambda member: is_admin(member, bot.db)
+bot.is_admin = lambda member, *, interaction=None: is_admin(member, bot.db, interaction=interaction)
 bot.send_temporary = send_temporary
 bot.toggle_prefix = toggle_prefix
 bot.get_botc_category = get_botc_category
@@ -1409,7 +1409,7 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
         guild = interaction.guild
         member = interaction.user
 
-        if not await is_admin(member, db):
+        if not await is_admin(member, db, interaction=interaction):
             await interaction.response.send_message(
                 "❌ Only administrators can use /autosetup.", ephemeral=True
             )
