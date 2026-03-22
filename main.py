@@ -1407,9 +1407,9 @@ async def autosetup_handler(interaction: discord.Interaction) -> None:
     """Handle /autosetup command - automatically create gothic-themed BOTC server structure."""
     try:
         guild = interaction.guild
-        member = guild.get_member(interaction.user.id) if guild else None
+        member = interaction.user
 
-        if not await is_admin(member):
+        if not await is_admin(member, db):
             await interaction.response.send_message(
                 "❌ Only administrators can use /autosetup.", ephemeral=True
             )

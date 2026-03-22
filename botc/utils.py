@@ -247,9 +247,13 @@ async def is_admin(member: Optional[discord.Member], db=None) -> bool:
     """
     if member is None:
         return False
-    
+
+    # Server owner always has admin access
+    if hasattr(member, 'guild') and member.guild and member.guild.owner_id == member.id:
+        return True
+
     # Check for Discord administrator permission
-    if member.guild_permissions.administrator:
+    if hasattr(member, 'guild_permissions') and member.guild_permissions.administrator:
         return True
     
     # Check for custom admin roles from database

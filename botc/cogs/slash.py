@@ -1335,7 +1335,7 @@ class SlashCog(commands.Cog):
         async def setadmin_slash(interaction: discord.Interaction, role: discord.Role, action: str):
             """Set or remove a role as an admin role for bot commands."""
             # Only server administrators can manage admin roles
-            if not interaction.user.guild_permissions.administrator:
+            if not await self.bot.is_admin(interaction.user):
                 await interaction.response.send_message(
                     "❌ Only server administrators can manage admin roles.",
                     ephemeral=True
