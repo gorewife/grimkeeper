@@ -77,7 +77,7 @@ class Database:
             logger.warning(f"Error checking schema existence: {e}")
         
         # Run consolidated schema
-        schema_file = migrations_dir / "001_complete_schema.sql"
+        schema_file = migrations_dir / "012_complete_schema_update.sql"
         if not schema_file.exists():
             logger.error(f"Schema file not found: {schema_file}")
             return
